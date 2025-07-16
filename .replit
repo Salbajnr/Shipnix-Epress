@@ -1,0 +1,1 @@
+modules = ["bash", "c-clang14", "gcloud", "haskell-ghc9.6", "java-graalvm22.3", "swift-5.8"]
