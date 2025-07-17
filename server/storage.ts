@@ -142,7 +142,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getHoldingsByPortfolioId(portfolioId: number): Promise<(Holding & { cryptocurrency: Cryptocurrency })[]> {
-    return await db
+    const results = await db
       .select({
         id: holdings.id,
         portfolioId: holdings.portfolioId,
@@ -153,8 +153,10 @@ export class DatabaseStorage implements IStorage {
         cryptocurrency: cryptocurrencies,
       })
       .from(holdings)
-      .leftJoin(cryptocurrencies, eq(holdings.cryptoId, cryptocurrencies.id))
+      .innerJoin(cryptocurrencies, eq(holdings.cryptoId, cryptocurrencies.id))
       .where(eq(holdings.portfolioId, portfolioId));
+    
+    return results.filter(result => result.cryptocurrency !== null) as (Holding & { cryptocurrency: Cryptocurrency })[];
   }
 
   // Transaction operations
@@ -164,7 +166,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTransactionsByPortfolioId(portfolioId: number, limit = 10): Promise<(Transaction & { cryptocurrency: Cryptocurrency })[]> {
-    return await db
+    const results = await db
       .select({
         id: transactions.id,
         portfolioId: transactions.portfolioId,
@@ -178,10 +180,12 @@ export class DatabaseStorage implements IStorage {
         cryptocurrency: cryptocurrencies,
       })
       .from(transactions)
-      .leftJoin(cryptocurrencies, eq(transactions.cryptoId, cryptocurrencies.id))
+      .innerJoin(cryptocurrencies, eq(transactions.cryptoId, cryptocurrencies.id))
       .where(eq(transactions.portfolioId, portfolioId))
       .orderBy(desc(transactions.createdAt))
       .limit(limit);
+    
+    return results.filter(result => result.cryptocurrency !== null) as (Transaction & { cryptocurrency: Cryptocurrency })[];
   }
 
   // NFT operations
