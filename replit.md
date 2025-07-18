@@ -1,8 +1,8 @@
-# CryptoTracker Pro - Cryptocurrency Tracking Platform
+# Shipnix-Express - Global Logistics Solutions
 
 ## Overview
 
-CryptoTracker Pro is a comprehensive cryptocurrency tracking and simulation platform built with a modern full-stack architecture. The application provides real-time price data with an admin-controlled trading environment, featuring interactive user interface for exploring crypto markets, portfolio simulation, and live price updates through WebSocket connections.
+Shipnix-Express is a comprehensive global logistics and delivery tracking service built with a modern full-stack architecture. The application specializes in fast, dependable logistics solutions—delivering shipments quickly and securely to over 220 countries and territories. It features real-time status updates, delivery notifications, and a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
 
 ## User Preferences
 

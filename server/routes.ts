@@ -7,44 +7,6 @@ import { insertPackageSchema, insertTrackingEventSchema, insertQuoteSchema, inse
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create HTTP server first
-  const httpServer = createServer(app);
-  
-  // Setup WebSocket server for real-time updates
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: "/ws" 
-  });
-
-  wss.on("connection", (ws) => {
-    console.log("New WebSocket connection established");
-
-    ws.on("message", (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        console.log("Received WebSocket message:", data);
-        
-        // Handle different message types here if needed
-        if (data.type === "subscribe") {
-          // Client subscribing to tracking updates
-          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
-        }
-      } catch (error) {
-        console.error("Error handling WebSocket message:", error);
-      }
-    });
-
-    ws.on("close", () => {
-      console.log("WebSocket connection closed");
-    });
-
-    // Send welcome message
-    ws.send(JSON.stringify({ 
-      type: "connected", 
-      message: "Connected to ShipTrack real-time updates" 
-    }));
-  });
-  
   // Auth middleware
   await setupAuth(app);
 
@@ -57,114 +19,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Cryptocurrency API routes
-  app.get("/api/cryptocurrencies", async (req, res) => {
-    try {
-      // Mock cryptocurrency data for development
-      const mockData = [
-        {
-          id: "bitcoin",
-          symbol: "btc",
-          name: "Bitcoin",
-          current_price: 43250.92,
-          price_change_percentage_24h: 2.45
-        },
-        {
-          id: "ethereum",
-          symbol: "eth", 
-          name: "Ethereum",
-          current_price: 2634.18,
-          price_change_percentage_24h: 1.23
-        },
-        {
-          id: "binancecoin",
-          symbol: "bnb",
-          name: "BNB",
-          current_price: 245.67,
-          price_change_percentage_24h: -0.89
-        },
-        {
-          id: "cardano",
-          symbol: "ada",
-          name: "Cardano", 
-          current_price: 0.47,
-          price_change_percentage_24h: 3.21
-        },
-        {
-          id: "solana",
-          symbol: "sol",
-          name: "Solana",
-          current_price: 98.34,
-          price_change_percentage_24h: 5.67
-        },
-        {
-          id: "ripple",
-          symbol: "xrp",
-          name: "XRP",
-          current_price: 0.57,
-          price_change_percentage_24h: -1.45
-        },
-        {
-          id: "polkadot",
-          symbol: "dot",
-          name: "Polkadot",
-          current_price: 6.82,
-          price_change_percentage_24h: 2.10
-        },
-        {
-          id: "avalanche-2",
-          symbol: "avax",
-          name: "Avalanche",
-          current_price: 27.89,
-          price_change_percentage_24h: 4.33
-        },
-        {
-          id: "chainlink",
-          symbol: "link",
-          name: "Chainlink",
-          current_price: 14.56,
-          price_change_percentage_24h: 1.87
-        },
-        {
-          id: "polygon",
-          symbol: "matic",
-          name: "Polygon",
-          current_price: 0.89,
-          price_change_percentage_24h: -0.65
-        }
-      ];
-      
-      res.json(mockData);
-    } catch (error) {
-      console.error("Error fetching cryptocurrencies:", error);
-      res.status(500).json({ message: "Failed to fetch cryptocurrency data" });
-    }
-  });
-
-  app.get("/api/cryptocurrencies/:id/history", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { days = '1' } = req.query;
-      
-      // Generate mock historical data
-      const numPoints = parseInt(days as string) * 24;
-      const basePrice = id === 'bitcoin' ? 43000 : id === 'ethereum' ? 2600 : 100;
-      const history = [];
-      
-      for (let i = 0; i < numPoints; i++) {
-        const timestamp = Date.now() - (numPoints - i) * 60 * 60 * 1000;
-        const variance = (Math.random() - 0.5) * 0.05; // 5% variance
-        const price = basePrice * (1 + variance);
-        history.push([timestamp, price]);
-      }
-      
-      res.json(history);
-    } catch (error) {
-      console.error("Error fetching price history:", error);
-      res.status(500).json({ message: "Failed to fetch price history" });
     }
   });
 
@@ -491,6 +345,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
     }
+  });
+
+  // Create HTTP server
+  const httpServer = createServer(app);
+
+  // Setup WebSocket server for real-time updates
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: "/ws" 
+  });
+
+  wss.on("connection", (ws) => {
+    console.log("New WebSocket connection established");
+
+    ws.on("message", (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log("Received WebSocket message:", data);
+        
+        // Handle different message types here if needed
+        if (data.type === "subscribe") {
+          // Client subscribing to tracking updates
+          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+      }
+    });
+
+    ws.on("close", () => {
+      console.log("WebSocket connection closed");
+    });
+
+    // Send welcome message
+    ws.send(JSON.stringify({ 
+      type: "connected", 
+      message: "Connected to ShipTrack real-time updates" 
+    }));
   });
 
   return httpServer;

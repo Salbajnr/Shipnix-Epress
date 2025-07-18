@@ -13,7 +13,6 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import CustomerDashboard from "@/pages/customer-dashboard";
 import FAQPage from "@/pages/faq";
-import Features from "@/pages/features";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,7 +27,6 @@ function Router() {
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/faq" component={FAQPage} />
       <Route path="/support" component={FAQPage} />
-      <Route path="/features" component={Features} />
       
       {/* Protected Admin Routes */}
       {isLoading || !isAuthenticated ? (
@@ -45,14 +43,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="shipnix-theme">
+    <ThemeProvider defaultTheme="light" storageKey="shipnix-theme">
+      <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Router />
           <Toaster />
+          <Router />
         </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
