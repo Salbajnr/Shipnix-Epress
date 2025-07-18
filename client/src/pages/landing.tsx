@@ -59,7 +59,6 @@ export default function Landing() {
 
   const formatPaymentMethod = (method: string) => {
     const methods = {
-      cash: "Cash on Delivery",
       card: "Credit/Debit Card",
       bank_transfer: "Bank Transfer",
       paypal: "PayPal",
@@ -78,7 +77,7 @@ export default function Landing() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">ShipTrack</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">Shipnix-Express</span>
             </div>
             <Button asChild>
               <a href="/api/login">Admin Login</a>
@@ -91,11 +90,11 @@ export default function Landing() {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Track Your Package
-            <span className="block text-blue-600 dark:text-blue-400">Anytime, Anywhere</span>
+            Global Logistics Solutions
+            <span className="block text-blue-600 dark:text-blue-400">Fast & Secure Delivery</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-12">
-            Enter your tracking ID below to get real-time updates on your shipment
+            Delivering to over 220 countries and territories worldwide. Track your shipment in real-time with our advanced logistics platform.
           </p>
 
           {/* Tracking Input */}
@@ -103,10 +102,10 @@ export default function Landing() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Search className="h-5 w-5" />
-                Track Your Package
+                Track Your Shipment
               </CardTitle>
               <CardDescription>
-                Enter your tracking ID (format: ST-XXXXXXXXX)
+                Enter your Shipnix-Express tracking ID (format: ST-XXXXXXXXX)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -286,33 +285,33 @@ export default function Landing() {
       <section className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
-            Why Choose ShipTrack?
+            Why Choose Shipnix-Express?
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <Card>
               <CardContent className="pt-6 text-center">
                 <Truck className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Real-Time Tracking</h3>
+                <h3 className="text-xl font-semibold mb-2">Global Network</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Get instant updates on your package location and delivery status
+                  Delivering to over 220 countries and territories with our extensive logistics network
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <Shield className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Secure & Reliable</h3>
+                <h3 className="text-xl font-semibold mb-2">Fast & Secure</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Your package information is protected with enterprise-grade security
+                  Advanced security measures with fast, dependable delivery solutions worldwide
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-6 text-center">
                 <Clock className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">24/7 Support</h3>
+                <h3 className="text-xl font-semibold mb-2">Contract Logistics</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Track your packages anytime, anywhere with our always-on service
+                  Comprehensive freight services and supply chain management solutions
                 </p>
               </CardContent>
             </Card>
@@ -325,10 +324,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Package className="h-6 w-6" />
-            <span className="text-xl font-bold">ShipTrack</span>
+            <span className="text-xl font-bold">Shipnix-Express</span>
           </div>
           <p className="text-gray-400">
-            Professional shipping and delivery tracking service
+            Global logistics solutions - connecting businesses to over 220 countries worldwide
           </p>
         </div>
       </footer>

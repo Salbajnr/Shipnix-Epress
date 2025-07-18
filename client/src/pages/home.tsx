@@ -48,7 +48,7 @@ export default function Home() {
     weight: "",
     dimensions: "",
     shippingCost: "",
-    paymentMethod: "cash",
+    paymentMethod: "card",
     estimatedDelivery: "",
   });
 
@@ -103,7 +103,7 @@ export default function Home() {
       weight: "",
       dimensions: "",
       shippingCost: "",
-      paymentMethod: "cash",
+      paymentMethod: "card",
       estimatedDelivery: "",
     });
   };
@@ -135,7 +135,6 @@ export default function Home() {
 
   const formatPaymentMethod = (method: string) => {
     const methods = {
-      cash: "Cash on Delivery",
       card: "Credit/Debit Card",
       bank_transfer: "Bank Transfer",
       paypal: "PayPal",
@@ -155,8 +154,8 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">ShipTrack Admin</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Package Management Dashboard</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Shipnix-Express Admin</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Global Logistics Management Dashboard</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -391,7 +390,6 @@ export default function Home() {
                           <SelectValue placeholder="Select payment method" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="cash">Cash on Delivery</SelectItem>
                           <SelectItem value="card">Credit/Debit Card</SelectItem>
                           <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                           <SelectItem value="paypal">PayPal</SelectItem>
