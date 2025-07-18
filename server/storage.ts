@@ -2,12 +2,21 @@ import {
   users,
   packages,
   trackingEvents,
+  quotes,
+  invoices,
+  notifications,
   type User,
   type UpsertUser,
   type Package,
   type TrackingEvent,
+  type Quote,
+  type Invoice,
+  type Notification,
   type InsertPackage,
   type InsertTrackingEvent,
+  type InsertQuote,
+  type InsertInvoice,
+  type InsertNotification,
   PACKAGE_STATUSES,
 } from "@shared/schema";
 import { db } from "./db";
@@ -31,6 +40,25 @@ export interface IStorage {
   // Tracking event operations
   addTrackingEvent(event: InsertTrackingEvent): Promise<TrackingEvent>;
   getTrackingEventsByPackageId(packageId: number): Promise<TrackingEvent[]>;
+
+  // Quote operations
+  createQuote(quoteData: InsertQuote): Promise<Quote>;
+  getQuoteById(id: number): Promise<Quote | undefined>;
+  getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined>;
+  getAllQuotes(limit?: number): Promise<Quote[]>;
+  updateQuoteStatus(id: number, status: string): Promise<Quote>;
+
+  // Invoice operations
+  createInvoice(invoiceData: InsertInvoice): Promise<Invoice>;
+  getInvoiceById(id: number): Promise<Invoice | undefined>;
+  getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined>;
+  getAllInvoices(limit?: number): Promise<Invoice[]>;
+  updateInvoicePayment(id: number, paymentStatus: string, paidAt?: Date): Promise<Invoice>;
+
+  // Notification operations
+  createNotification(notificationData: InsertNotification): Promise<Notification>;
+  getNotificationsByPackageId(packageId: number): Promise<Notification[]>;
+  updateNotificationStatus(id: number, status: string, sentAt?: Date, errorMessage?: string): Promise<Notification>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -174,6 +202,132 @@ export class DatabaseStorage implements IStorage {
       [PACKAGE_STATUSES.RETURNED]: "Package is being returned to sender",
     };
     return descriptions[status as keyof typeof descriptions] || "Status updated";
+  }
+
+  // Quote operations
+  async createQuote(quoteData: InsertQuote): Promise<Quote> {
+    const quoteNumber = this.generateQuoteNumber();
+    
+    const [newQuote] = await db
+      .insert(quotes)
+      .values({
+        ...quoteData,
+        quoteNumber,
+      })
+      .returning();
+    
+    return newQuote;
+  }
+
+  async getQuoteById(id: number): Promise<Quote | undefined> {
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
+    return quote;
+  }
+
+  async getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined> {
+    const [quote] = await db.select().from(quotes).where(eq(quotes.quoteNumber, quoteNumber));
+    return quote;
+  }
+
+  async getAllQuotes(limit = 50): Promise<Quote[]> {
+    return await db.select().from(quotes).orderBy(desc(quotes.createdAt)).limit(limit);
+  }
+
+  async updateQuoteStatus(id: number, status: string): Promise<Quote> {
+    const [updatedQuote] = await db
+      .update(quotes)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(quotes.id, id))
+      .returning();
+    
+    return updatedQuote;
+  }
+
+  // Invoice operations
+  async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
+    const invoiceNumber = this.generateInvoiceNumber();
+    
+    const [newInvoice] = await db
+      .insert(invoices)
+      .values({
+        ...invoiceData,
+        invoiceNumber,
+      })
+      .returning();
+    
+    return newInvoice;
+  }
+
+  async getInvoiceById(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice;
+  }
+
+  async getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.invoiceNumber, invoiceNumber));
+    return invoice;
+  }
+
+  async getAllInvoices(limit = 50): Promise<Invoice[]> {
+    return await db.select().from(invoices).orderBy(desc(invoices.createdAt)).limit(limit);
+  }
+
+  async updateInvoicePayment(id: number, paymentStatus: string, paidAt?: Date): Promise<Invoice> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set({ 
+        paymentStatus, 
+        paidAt: paidAt || new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(invoices.id, id))
+      .returning();
+    
+    return updatedInvoice;
+  }
+
+  // Notification operations
+  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db
+      .insert(notifications)
+      .values(notificationData)
+      .returning();
+    
+    return newNotification;
+  }
+
+  async getNotificationsByPackageId(packageId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.packageId, packageId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async updateNotificationStatus(id: number, status: string, sentAt?: Date, errorMessage?: string): Promise<Notification> {
+    const [updatedNotification] = await db
+      .update(notifications)
+      .set({ 
+        status, 
+        sentAt, 
+        errorMessage 
+      })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return updatedNotification;
+  }
+
+  // Generate unique quote number (QT-XXXXXXXX format)
+  private generateQuoteNumber(): string {
+    const timestamp = Date.now().toString().slice(-8);
+    return `QT-${timestamp}`;
+  }
+
+  // Generate unique invoice number (INV-XXXXXXXX format)
+  private generateInvoiceNumber(): string {
+    const timestamp = Date.now().toString().slice(-8);
+    return `INV-${timestamp}`;
   }
 }
 

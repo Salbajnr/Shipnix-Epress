@@ -77,6 +77,64 @@ export const trackingEvents = pgTable("tracking_events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Quotes table for customer quotes
+export const quotes = pgTable("quotes", {
+  id: serial("id").primaryKey(),
+  quoteNumber: varchar("quote_number", { length: 20 }).unique().notNull(),
+  customerName: varchar("customer_name", { length: 100 }).notNull(),
+  customerEmail: varchar("customer_email", { length: 100 }).notNull(),
+  customerPhone: varchar("customer_phone", { length: 20 }),
+  senderAddress: text("sender_address").notNull(),
+  recipientAddress: text("recipient_address").notNull(),
+  packageDescription: text("package_description"),
+  weight: decimal("weight", { precision: 10, scale: 2 }),
+  dimensions: text("dimensions"),
+  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }).notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, accepted, expired, converted
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Invoices table
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: varchar("invoice_number", { length: 20 }).unique().notNull(),
+  quoteId: integer("quote_id").references(() => quotes.id),
+  packageId: integer("package_id").references(() => packages.id),
+  customerName: varchar("customer_name", { length: 100 }).notNull(),
+  customerEmail: varchar("customer_email", { length: 100 }).notNull(),
+  customerAddress: text("customer_address"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  paymentMethod: varchar("payment_method", { length: 20 }).notNull(),
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"),
+  paidAt: timestamp("paid_at"),
+  dueDate: timestamp("due_date").notNull(),
+  items: jsonb("items").notNull(), // Array of invoice line items
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notifications table for email/SMS alerts
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  packageId: integer("package_id").references(() => packages.id),
+  recipientEmail: varchar("recipient_email", { length: 100 }),
+  recipientPhone: varchar("recipient_phone", { length: 20 }),
+  type: varchar("type", { length: 30 }).notNull(), // email, sms, push
+  subject: varchar("subject", { length: 200 }),
+  message: text("message").notNull(),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, sent, failed
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   packages: many(packages),
@@ -97,12 +155,45 @@ export const trackingEventsRelations = relations(trackingEvents, ({ one }) => ({
   }),
 }));
 
+export const quotesRelations = relations(quotes, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [quotes.createdBy],
+    references: [users.id],
+  }),
+  invoices: many(invoices),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [invoices.quoteId],
+    references: [quotes.id],
+  }),
+  package: one(packages, {
+    fields: [invoices.packageId],
+    references: [packages.id],
+  }),
+  creator: one(users, {
+    fields: [invoices.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  package: one(packages, {
+    fields: [notifications.packageId],
+    references: [packages.id],
+  }),
+}));
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 export type Package = typeof packages.$inferSelect;
 export type TrackingEvent = typeof trackingEvents.$inferSelect;
+export type Quote = typeof quotes.$inferSelect;
+export type Invoice = typeof invoices.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -122,9 +213,31 @@ export const insertTrackingEventSchema = createInsertSchema(trackingEvents).omit
   createdAt: true,
 });
 
+export const insertQuoteSchema = createInsertSchema(quotes).omit({
+  id: true,
+  quoteNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  invoiceNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type InsertTrackingEvent = z.infer<typeof insertTrackingEventSchema>;
+export type InsertQuote = z.infer<typeof insertQuoteSchema>;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Package status constants
 export const PACKAGE_STATUSES = {
@@ -141,10 +254,13 @@ export const PACKAGE_STATUSES = {
 export const PAYMENT_METHODS = {
   CARD: "card",
   BANK_TRANSFER: "bank_transfer",
+  IBAN: "iban",
+  LOCAL_BANK: "local_bank",
   BITCOIN: "bitcoin",
   ETHEREUM: "ethereum",
   USDC: "usdc",
   PAYPAL: "paypal",
+  APPLE_PAY: "apple_pay",
 } as const;
 
 // Payment status constants
