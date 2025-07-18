@@ -122,6 +122,13 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Live Chat
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/api/login">Admin Login</a>
+                </Button>
                 <Link href="/login">
                   <Button variant="ghost" className="text-sm">
                     Sign In
@@ -163,10 +170,17 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
                 </Link>
               ))}
               {!showUserMenu && (
-                <div className="flex flex-col space-y-2 pt-4">
+                <div className="flex flex-col space-y-2 pt-4 border-t">
+                  <Button variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700 justify-start">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Live Chat
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <a href="/api/login">Admin Login</a>
+                  </Button>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full">
-                      Sign In
+                      Customer Sign In
                     </Button>
                   </Link>
                   <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
