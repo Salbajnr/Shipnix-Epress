@@ -76,8 +76,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">Shipnix-Express</span>
+              <img 
+                src="/attached_assets/Shipnix logo_1752803535936.png" 
+                alt="Shipnix-Express" 
+                className="h-10 w-auto"
+              />
             </div>
             <Button asChild>
               <a href="/api/login">Admin Login</a>
@@ -322,9 +325,12 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Package className="h-6 w-6" />
-            <span className="text-xl font-bold">Shipnix-Express</span>
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="/attached_assets/Shipnix logo_1752803535936.png" 
+              alt="Shipnix-Express" 
+              className="h-8 w-auto"
+            />
           </div>
           <p className="text-gray-400">
             Global logistics solutions - connecting businesses to over 220 countries worldwide
