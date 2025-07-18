@@ -12,6 +12,7 @@ import {
   insertNotificationSchema, 
   insertChatMessageSchema,
   PACKAGE_STATUSES,
+  QUOTE_STATUSES,
   DELIVERY_TIME_SLOTS 
 } from "@shared/schema";
 import { z } from "zod";
@@ -408,6 +409,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating quote status:", error);
       res.status(500).json({ message: "Failed to update quote status" });
+    }
+  });
+
+  // Convert quote to invoice
+  app.post("/api/quotes/:id/convert-to-invoice", isAuthenticated, async (req: any, res) => {
+    try {
+      const quoteId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+
+      const quote = await storage.getQuoteById(quoteId);
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+
+      if (quote.status !== QUOTE_STATUSES.APPROVED) {
+        return res.status(400).json({ message: "Quote must be approved before converting to invoice" });
+      }
+
+      // Create invoice from quote
+      const invoiceData = {
+        quoteId: quote.id,
+        customerName: quote.senderName,
+        customerEmail: quote.senderEmail || "",
+        customerAddress: quote.senderAddress,
+        totalAmount: quote.totalCost,
+        paymentMethod: "card", // Default, can be changed later
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        items: [
+          {
+            description: "Shipping Service",
+            details: `From: ${quote.senderAddress} To: ${quote.recipientAddress}`,
+            baseCost: quote.baseCost,
+            deliveryFee: quote.deliveryFee,
+            totalCost: quote.totalCost
+          }
+        ],
+        createdBy: userId,
+      };
+
+      const newInvoice = await storage.createInvoice(invoiceData);
+      
+      // Update quote status to converted
+      await storage.updateQuoteStatus(quoteId, QUOTE_STATUSES.CONVERTED_TO_INVOICE);
+
+      // Send invoice notification to customer
+      await notificationService.sendNotification({
+        packageId: 0, // No package yet
+        type: 'email',
+        recipientEmail: quote.senderEmail || "",
+        subject: `Invoice ${newInvoice.invoiceNumber} - Payment Required`,
+        message: `Dear ${quote.senderName},\n\nYour quote ${quote.quoteNumber} has been approved. Please find your invoice ${newInvoice.invoiceNumber} attached.\n\nTotal Amount: $${quote.totalCost}\nDue Date: ${newInvoice.dueDate.toLocaleDateString()}\n\nPlease complete payment to proceed with your shipment.\n\nThank you for choosing Shipnix-Express!`,
+        autoSend: true,
+      });
+
+      res.json({ invoice: newInvoice, message: "Quote converted to invoice successfully" });
+    } catch (error) {
+      console.error("Error converting quote to invoice:", error);
+      res.status(500).json({ message: "Failed to convert quote to invoice" });
+    }
+  });
+
+  // Mark invoice as paid and create package with tracking ID
+  app.patch("/api/invoices/:id/mark-paid", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+
+      const invoice = await storage.updateInvoicePaymentStatus(id, "paid");
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      // If invoice has a quote, create package from quote
+      if (invoice.quoteId) {
+        const quote = await storage.getQuoteById(invoice.quoteId);
+        if (quote) {
+          const packageData = {
+            senderName: quote.senderName,
+            senderEmail: quote.senderEmail,
+            senderPhone: quote.senderPhone || "",
+            senderAddress: quote.senderAddress,
+            recipientName: quote.recipientName,
+            recipientEmail: quote.recipientEmail,
+            recipientPhone: quote.recipientPhone || "",
+            recipientAddress: quote.recipientAddress,
+            description: quote.packageDescription || "Package from approved quote",
+            weight: quote.weight ? parseFloat(quote.weight.toString()) : 0,
+            dimensions: quote.dimensions || "",
+            shippingCost: quote.totalCost ? parseFloat(quote.totalCost.toString()) : 0,
+            deliveryPriceAdjustment: quote.deliveryFee ? parseFloat(quote.deliveryFee.toString()) : 0,
+            scheduledTimeSlot: quote.deliveryTimeSlot,
+            paymentStatus: "paid",
+            currentStatus: PACKAGE_STATUSES.CREATED, // Now packages start as "created" after payment
+            createdBy: userId,
+          };
+
+          const newPackage = await storage.createPackage(packageData);
+          
+          // Send package creation notification
+          await notificationService.sendPackageStatusUpdate(newPackage, PACKAGE_STATUSES.CREATED);
+
+          res.json({ 
+            invoice, 
+            package: newPackage, 
+            trackingId: newPackage.trackingId,
+            qrCode: newPackage.qrCode,
+            message: "Payment confirmed! Package created with tracking ID and QR code generated." 
+          });
+          return;
+        }
+      }
+
+      res.json({ invoice, message: "Payment confirmed" });
+    } catch (error) {
+      console.error("Error marking invoice as paid:", error);
+      res.status(500).json({ message: "Failed to mark invoice as paid" });
     }
   });
 

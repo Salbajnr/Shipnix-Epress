@@ -140,13 +140,15 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
 
-    // Add initial tracking event
-    await this.addTrackingEvent({
-      packageId: newPackage.id,
-      status: PACKAGE_STATUSES.CREATED,
-      location: "Package created in system",
-      description: "Package has been registered for shipping",
-    });
+    // Only add initial tracking event if package is created (payment completed)
+    if (newPackage.currentStatus === PACKAGE_STATUSES.CREATED) {
+      await this.addTrackingEvent({
+        packageId: newPackage.id,
+        status: PACKAGE_STATUSES.CREATED,
+        location: "Package created in system",
+        description: "Package has been registered for shipping after payment confirmation",
+      });
+    }
 
     return newPackage;
   }
