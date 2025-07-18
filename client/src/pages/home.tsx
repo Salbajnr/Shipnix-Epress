@@ -7,12 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users } from "lucide-react";
+import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users, FileText, CreditCard, BarChart3, QrCode, Mail, Phone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import shipnixLogo from "@/assets/shipnix-logo.png";
 import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
-import type { Package as PackageType } from "@shared/schema";
+import type { Package as PackageType, Quote, Invoice } from "@shared/schema";
+import PaymentMethods from "@/components/PaymentMethods";
+import TrackingTimeline from "@/components/TrackingTimeline";
+import LiveChat from "@/components/LiveChat";
 
 interface PackageFormData {
   senderName: string;
@@ -36,6 +39,7 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<PackageType | null>(null);
+  const [activeTab, setActiveTab] = useState<"packages" | "quotes" | "invoices" | "analytics">("packages");
   const [formData, setFormData] = useState<PackageFormData>({
     senderName: "",
     senderAddress: "",
@@ -182,6 +186,31 @@ export default function Home() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-8">
+          <nav className="-mb-px flex space-x-8">
+            {[
+              { id: "packages", label: "Packages", icon: Package },
+              { id: "quotes", label: "Quotes", icon: FileText },
+              { id: "invoices", label: "Invoices", icon: CreditCard },
+              { id: "analytics", label: "Analytics", icon: BarChart3 },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as any)}
+                className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === id
+                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+                }`}
+              >
+                <Icon className="h-5 w-5 mr-2" />
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -236,17 +265,67 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Package Management</h2>
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Package
-          </Button>
-        </div>
+        {/* Tab Content */}
+        {activeTab === "packages" && (
+          <>
+            {/* Actions */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Package Management</h2>
+              <Button onClick={() => setShowCreateForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Package
+              </Button>
+            </div>
+          </>
+        )}
+
+        {activeTab === "quotes" && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Quote Management</h2>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium">Quote Management Coming Soon</h3>
+                  <p>Advanced quote generation and management features will be available here.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === "invoices" && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Invoice Management</h2>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <CreditCard className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium">Invoice Management Coming Soon</h3>
+                  <p>Comprehensive invoice tracking and payment management features will be available here.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === "analytics" && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Analytics Dashboard</h2>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium">Analytics Coming Soon</h3>
+                  <p>Detailed shipping analytics, performance metrics, and insights will be available here.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Create Package Form */}
-        {showCreateForm && (
+        {activeTab === "packages" && showCreateForm && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Create New Package</CardTitle>
@@ -385,24 +464,15 @@ export default function Home() {
                         placeholder="0.00"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="paymentMethod">Payment Method</Label>
-                      <Select
-                        value={formData.paymentMethod}
-                        onValueChange={(value) => handleInputChange("paymentMethod", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="card">Credit/Debit Card</SelectItem>
-                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                          <SelectItem value="paypal">PayPal</SelectItem>
-                          <SelectItem value="bitcoin">Bitcoin (BTC)</SelectItem>
-                          <SelectItem value="ethereum">Ethereum (ETH)</SelectItem>
-                          <SelectItem value="usdc">USD Coin (USDC)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="md:col-span-2">
+                      <Label>Payment Method</Label>
+                      <div className="mt-2">
+                        <PaymentMethods
+                          selectedMethod={formData.paymentMethod}
+                          onMethodSelect={(method) => handleInputChange("paymentMethod", method)}
+                          showDisabled={true}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -434,6 +504,7 @@ export default function Home() {
         )}
 
         {/* Packages List */}
+        {activeTab === "packages" && (
         <Card>
           <CardHeader>
             <CardTitle>Recent Packages</CardTitle>
@@ -504,6 +575,7 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Update Status Modal */}
         {selectedPackage && (
@@ -569,6 +641,9 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Live Chat Component */}
+      <LiveChat />
     </div>
   );
 }

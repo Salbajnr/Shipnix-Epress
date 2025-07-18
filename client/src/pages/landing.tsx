@@ -2,9 +2,22 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Truck, MapPin, Clock, Shield, Search, Globe, Zap, Users, Award, Phone, Mail, ArrowRight, CheckCircle, Star, BarChart3, Menu, X } from "lucide-react";
+import { Package, Truck, MapPin, Clock, Shield, Search, Globe, Zap, Users, Award, Phone, Mail, ArrowRight, CheckCircle, Star, BarChart3, Menu, X, LogIn, Calculator, FileText, CreditCard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import shipnixLogo from "@/assets/shipnix-logo.png";
+import PaymentMethods from "@/components/PaymentMethods";
+import LiveChat from "@/components/LiveChat";
+
+interface QuoteRequest {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  senderAddress: string;
+  recipientAddress: string;
+  packageDescription: string;
+  weight: string;
+  dimensions: string;
+}
 
 interface TrackingResult {
   trackingId: string;
@@ -31,6 +44,19 @@ export default function Landing() {
   const [searchTriggered, setSearchTriggered] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeTab, setActiveTab] = useState<"track" | "quote" | "about">("track");
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
+  const [quoteForm, setQuoteForm] = useState<QuoteRequest>({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    senderAddress: "",
+    recipientAddress: "",
+    packageDescription: "",
+    weight: "",
+    dimensions: "",
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,14 +68,49 @@ export default function Landing() {
 
   const { data: trackingResult, isLoading, error } = useQuery<TrackingResult>({
     queryKey: ["/api/track", trackingId],
-    enabled: searchTriggered && trackingId.length > 0,
+    enabled: false, // Disabled for public access
     retry: false,
   });
 
   const handleTrack = () => {
     if (trackingId.trim()) {
-      setSearchTriggered(true);
+      // Redirect to public tracking page
+      window.location.href = `/track/${trackingId.toUpperCase()}`;
+    } else {
+      alert("Please enter a valid tracking ID");
     }
+  };
+
+  const handleQuoteSubmit = async () => {
+    // Basic validation
+    if (!quoteForm.customerName || !quoteForm.customerEmail || !quoteForm.senderAddress || !quoteForm.recipientAddress) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      // In a real implementation, this would create a quote via API
+      alert(`Quote request submitted! We'll send a detailed quote to ${quoteForm.customerEmail} within 24 hours.`);
+      
+      // Reset form
+      setQuoteForm({
+        customerName: "",
+        customerEmail: "",
+        customerPhone: "",
+        senderAddress: "",
+        recipientAddress: "",
+        packageDescription: "",
+        weight: "",
+        dimensions: "",
+      });
+    } catch (error) {
+      console.error("Error submitting quote:", error);
+      alert("Error submitting quote. Please try again.");
+    }
+  };
+
+  const handleAdminLogin = () => {
+    window.location.href = "/api/auth/login";
   };
 
   const getStatusColor = (status: string) => {
@@ -271,29 +332,43 @@ export default function Landing() {
                 <div className="relative">
                   <Input
                     type="text"
-                    placeholder="Enter tracking ID (e.g., ST-ABC123DEF)"
+                    placeholder="Enter tracking ID (e.g., ST-DEMO12345)"
                     value={trackingId}
                     onChange={(e) => {
                       setTrackingId(e.target.value.toUpperCase());
                       setSearchTriggered(false);
                     }}
                     onKeyPress={(e) => e.key === "Enter" && handleTrack()}
-                    className="text-lg h-14 pl-6 pr-32 bg-gray-50 dark:bg-gray-900/50 border-2 focus:border-blue-500 rounded-xl"
+                    className="text-lg h-14 pl-6 pr-32 bg-gray-50 dark:bg-gray-900/50 border-2 focus:border-blue-500 rounded-xl font-mono"
                   />
                   <Button 
                     onClick={handleTrack} 
-                    disabled={isLoading || !trackingId.trim()}
+                    disabled={!trackingId.trim()}
                     className="absolute right-2 top-2 h-10 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg"
                   >
-                    {isLoading ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Tracking...
-                      </div>
-                    ) : (
-                      <>Track<ArrowRight className="ml-1 h-4 w-4" /></>
-                    )}
+                    Track<ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
+                </div>
+                
+                {/* Sample Tracking IDs for Demo */}
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-3 font-medium">
+                    🚀 Try these demo tracking IDs:
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {["ST-DEMO12345", "ST-DEMO67890", "ST-DEMO24680"].map((demoId) => (
+                      <button
+                        key={demoId}
+                        onClick={() => {
+                          setTrackingId(demoId);
+                          window.location.href = `/track/${demoId}`;
+                        }}
+                        className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-mono transition-colors shadow-lg hover:shadow-xl hover:scale-105 transform"
+                      >
+                        {demoId}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="flex items-center justify-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
