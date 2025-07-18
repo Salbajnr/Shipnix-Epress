@@ -14,7 +14,8 @@ import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table (mandatory for Replit Auth)
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessions = pgTable(
   "sessions",
   {
@@ -25,7 +26,8 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (mandatory for Replit Auth)
+// User storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().notNull(),
   email: varchar("email").unique(),
@@ -36,130 +38,98 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Cryptocurrencies table for storing crypto data
-export const cryptocurrencies = pgTable("cryptocurrencies", {
-  id: varchar("id").primaryKey(), // coingecko id
-  symbol: varchar("symbol").notNull(),
-  name: varchar("name").notNull(),
-  currentPrice: decimal("current_price", { precision: 20, scale: 8 }),
-  priceChange24h: decimal("price_change_24h", { precision: 10, scale: 4 }),
-  priceChangePercentage24h: decimal("price_change_percentage_24h", { precision: 10, scale: 4 }),
-  marketCap: decimal("market_cap", { precision: 20, scale: 2 }),
-  marketCapRank: integer("market_cap_rank"),
-  totalVolume: decimal("total_volume", { precision: 20, scale: 2 }),
-  lastUpdated: timestamp("last_updated").defaultNow(),
-});
-
-// User portfolios
-export const portfolios = pgTable("portfolios", {
+// Shipping and tracking tables
+export const packages = pgTable("packages", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  name: varchar("name").notNull().default("Main Portfolio"),
-  isDefault: boolean("is_default").default(true),
+  trackingId: varchar("tracking_id", { length: 20 }).unique().notNull(),
+  senderName: varchar("sender_name", { length: 100 }).notNull(),
+  senderAddress: text("sender_address").notNull(),
+  senderPhone: varchar("sender_phone", { length: 20 }),
+  senderEmail: varchar("sender_email", { length: 100 }),
+  recipientName: varchar("recipient_name", { length: 100 }).notNull(),
+  recipientAddress: text("recipient_address").notNull(),
+  recipientPhone: varchar("recipient_phone", { length: 20 }),
+  recipientEmail: varchar("recipient_email", { length: 100 }),
+  packageDescription: text("package_description"),
+  weight: decimal("weight", { precision: 10, scale: 2 }), // in kg
+  dimensions: text("dimensions"), // LxWxH format
+  estimatedDelivery: timestamp("estimated_delivery"),
+  actualDelivery: timestamp("actual_delivery"),
+  currentStatus: varchar("current_status", { length: 50 }).notNull().default("created"),
+  currentLocation: text("current_location"),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
-});
-
-// User holdings in portfolios
-export const holdings = pgTable("holdings", {
-  id: serial("id").primaryKey(),
-  portfolioId: integer("portfolio_id").references(() => portfolios.id).notNull(),
-  cryptoId: varchar("crypto_id").references(() => cryptocurrencies.id).notNull(),
-  amount: decimal("amount", { precision: 20, scale: 8 }).notNull(),
-  averageCost: decimal("average_cost", { precision: 20, scale: 8 }),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Transaction history (including admin-simulated ones)
-export const transactions = pgTable("transactions", {
+export const trackingEvents = pgTable("tracking_events", {
   id: serial("id").primaryKey(),
-  portfolioId: integer("portfolio_id").references(() => portfolios.id).notNull(),
-  cryptoId: varchar("crypto_id").references(() => cryptocurrencies.id).notNull(),
-  type: varchar("type").notNull(), // 'buy', 'sell', 'swap'
-  amount: decimal("amount", { precision: 20, scale: 8 }).notNull(),
-  price: decimal("price", { precision: 20, scale: 8 }).notNull(),
-  totalValue: decimal("total_value", { precision: 20, scale: 2 }).notNull(),
-  isSimulated: boolean("is_simulated").default(false),
+  packageId: integer("package_id").references(() => packages.id).notNull(),
+  status: varchar("status", { length: 50 }).notNull(),
+  location: text("location"),
+  description: text("description"),
+  timestamp: timestamp("timestamp").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
-
-// NFT Collections data
-export const nftCollections = pgTable("nft_collections", {
-  id: serial("id").primaryKey(),
-  name: varchar("name").notNull(),
-  slug: varchar("slug").unique().notNull(),
-  floorPrice: decimal("floor_price", { precision: 20, scale: 8 }),
-  priceChangePercentage24h: decimal("price_change_percentage_24h", { precision: 10, scale: 4 }),
-  imageUrl: varchar("image_url"),
-  lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
-  portfolios: many(portfolios),
+  packages: many(packages),
 }));
 
-export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
-  user: one(users, {
-    fields: [portfolios.userId],
+export const packagesRelations = relations(packages, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [packages.createdBy],
     references: [users.id],
   }),
-  holdings: many(holdings),
-  transactions: many(transactions),
+  trackingEvents: many(trackingEvents),
 }));
 
-export const holdingsRelations = relations(holdings, ({ one }) => ({
-  portfolio: one(portfolios, {
-    fields: [holdings.portfolioId],
-    references: [portfolios.id],
-  }),
-  cryptocurrency: one(cryptocurrencies, {
-    fields: [holdings.cryptoId],
-    references: [cryptocurrencies.id],
+export const trackingEventsRelations = relations(trackingEvents, ({ one }) => ({
+  package: one(packages, {
+    fields: [trackingEvents.packageId],
+    references: [packages.id],
   }),
 }));
 
-export const transactionsRelations = relations(transactions, ({ one }) => ({
-  portfolio: one(portfolios, {
-    fields: [transactions.portfolioId],
-    references: [portfolios.id],
-  }),
-  cryptocurrency: one(cryptocurrencies, {
-    fields: [transactions.cryptoId],
-    references: [cryptocurrencies.id],
-  }),
-}));
-
-// Schema types
+// Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-export type InsertCryptocurrency = typeof cryptocurrencies.$inferInsert;
-export type Cryptocurrency = typeof cryptocurrencies.$inferSelect;
+export type Package = typeof packages.$inferSelect;
+export type TrackingEvent = typeof trackingEvents.$inferSelect;
 
-export type InsertPortfolio = typeof portfolios.$inferInsert;
-export type Portfolio = typeof portfolios.$inferSelect;
-
-export type InsertHolding = typeof holdings.$inferInsert;
-export type Holding = typeof holdings.$inferSelect;
-
-export type InsertTransaction = typeof transactions.$inferInsert;
-export type Transaction = typeof transactions.$inferSelect;
-
-export type InsertNFTCollection = typeof nftCollections.$inferInsert;
-export type NFTCollection = typeof nftCollections.$inferSelect;
-
-// Zod schemas
-export const insertPortfolioSchema = createInsertSchema(portfolios).omit({
-  id: true,
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
-});
-
-export const insertHoldingSchema = createInsertSchema(holdings).omit({
-  id: true,
   updatedAt: true,
 });
 
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
+export const insertPackageSchema = createInsertSchema(packages).omit({
+  id: true,
+  trackingId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrackingEventSchema = createInsertSchema(trackingEvents).omit({
   id: true,
   createdAt: true,
 });
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertPackage = z.infer<typeof insertPackageSchema>;
+export type InsertTrackingEvent = z.infer<typeof insertTrackingEventSchema>;
+
+// Package status constants
+export const PACKAGE_STATUSES = {
+  CREATED: "created",
+  PICKED_UP: "picked_up",
+  IN_TRANSIT: "in_transit",
+  OUT_FOR_DELIVERY: "out_for_delivery",
+  DELIVERED: "delivered",
+  FAILED_DELIVERY: "failed_delivery",
+  RETURNED: "returned",
+} as const;
+
+export type PackageStatus = typeof PACKAGE_STATUSES[keyof typeof PACKAGE_STATUSES];

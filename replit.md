@@ -1,8 +1,8 @@
-# CoinStats - Cryptocurrency Portfolio Tracker
+# ShipTrack - Shipping and Delivery Tracking Service
 
 ## Overview
 
-CoinStats is a comprehensive cryptocurrency portfolio tracking application built with a modern full-stack architecture. The application provides real-time cryptocurrency price tracking, portfolio management, transaction history, and NFT collection monitoring. It features a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
+ShipTrack is a comprehensive shipping and delivery tracking service built with a modern full-stack architecture. The application allows administrators to generate unique tracking IDs for packages and enables recipients to track their items using those tracking IDs. It features real-time status updates, delivery notifications, and a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
 
 ## User Preferences
 
@@ -34,28 +34,27 @@ Preferred communication style: Simple, everyday language.
 The application uses PostgreSQL with the following main tables:
 - `users`: User authentication and profile data (required for Replit Auth)
 - `sessions`: Session storage for authentication (required for Replit Auth)
-- `cryptocurrencies`: Cryptocurrency data from CoinGecko API
-- `portfolios`: User portfolio containers
-- `holdings`: User cryptocurrency holdings with amounts and average costs
-- `transactions`: Transaction history (buy/sell) with simulation support
-- `nftCollections`: NFT collection data with floor prices
+- `packages`: Package information including sender/recipient details, tracking ID, and status
+- `tracking_events`: Historical events and status updates for each package
 
 ### Authentication System
 - **Provider**: Replit OIDC integration
 - **Session Management**: PostgreSQL-backed sessions with connect-pg-simple
 - **Security**: HTTP-only cookies with secure flags
 - **User Management**: Automatic user creation/updates on login
+- **Public Access**: Package tracking endpoint available without authentication
 
 ### Real-time Updates
 - **WebSocket Server**: Integrated with Express server
-- **Price Updates**: 30-second intervals for cryptocurrency prices
-- **Event Types**: `priceUpdate` and `transaction` events
+- **Package Updates**: Real-time status changes and location updates
+- **Event Types**: `packageUpdate` and `trackingUpdate` events
 - **Client Handling**: React hooks for WebSocket message management
 
-### API Integration
-- **CoinGecko Service**: Fetches cryptocurrency data and price history
-- **Data Caching**: Store fetched data in PostgreSQL for performance
-- **Rate Limiting**: Respects API rate limits with proper error handling
+### Package Management
+- **Tracking ID Generation**: Automatic generation of unique tracking IDs (ST-XXXXXXXXX format)
+- **Status Tracking**: Seven-stage delivery process from creation to delivery
+- **Event Logging**: Comprehensive tracking history with timestamps and locations
+- **Admin Controls**: Full package management dashboard for authenticated users
 
 ## Data Flow
 
@@ -64,30 +63,31 @@ The application uses PostgreSQL with the following main tables:
    - Successful auth → Creates/updates user in database
    - Session stored in PostgreSQL → User authenticated
 
-2. **Price Data Flow**:
-   - CoinGecko API → Backend service → Database storage
-   - WebSocket broadcasts → Frontend components → Real-time updates
+2. **Package Creation Flow**:
+   - Admin creates package → Unique tracking ID generated
+   - Package data stored → Initial tracking event created
+   - WebSocket broadcasts package creation to connected clients
 
-3. **Portfolio Management**:
-   - User actions → API endpoints → Database updates
-   - Portfolio calculations → Real-time WebSocket updates
-   - Transaction simulation → Immediate portfolio recalculation
+3. **Package Tracking Flow**:
+   - Public tracking endpoint → Package lookup by tracking ID
+   - Returns package details and complete tracking history
+   - No authentication required for tracking lookup
 
-4. **Real-time Updates**:
-   - Server fetches latest prices → Database updates
-   - WebSocket broadcasts to all connected clients
-   - Frontend components update automatically
+4. **Status Update Flow**:
+   - Admin updates package status → Database updates
+   - New tracking event automatically created
+   - WebSocket broadcasts status change to all connected clients
+   - Real-time updates reflect immediately in all interfaces
 
 ## External Dependencies
 
 ### APIs
-- **CoinGecko API**: Primary source for cryptocurrency data
 - **Replit OIDC**: Authentication provider
 - **Neon Database**: PostgreSQL hosting service
 
 ### Key Libraries
 - **Frontend**: React, Vite, TanStack Query, Radix UI, Tailwind CSS
-- **Backend**: Express, Drizzle ORM, WebSocket, Passport.js
+- **Backend**: Express, Drizzle ORM, WebSocket, Passport.js, Nanoid
 - **Database**: PostgreSQL with Neon serverless driver
 - **Authentication**: OpenID Connect client libraries
 
@@ -107,10 +107,11 @@ The application uses PostgreSQL with the following main tables:
 
 ### Key Features
 - **Responsive Design**: Mobile-first with desktop optimization
-- **Real-time Data**: WebSocket connections for live updates
-- **Portfolio Tracking**: Comprehensive investment management
-- **Transaction History**: Detailed transaction records with simulation
-- **NFT Integration**: Basic NFT collection tracking
-- **Admin Panel**: Transaction simulation for testing
+- **Real-time Updates**: WebSocket connections for live package tracking
+- **Package Management**: Comprehensive shipping and delivery tracking
+- **Public Tracking**: Anonymous package lookup by tracking ID
+- **Admin Dashboard**: Complete package creation and status management
+- **Status Workflow**: Seven-stage delivery process tracking
+- **Event History**: Detailed tracking timeline with locations and timestamps
 
-The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure.
+The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure optimized for shipping and logistics operations.

@@ -1,69 +1,309 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, Truck, MapPin, Clock, Shield, Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
+interface TrackingResult {
+  trackingId: string;
+  currentStatus: string;
+  currentLocation?: string;
+  estimatedDelivery?: string;
+  actualDelivery?: string;
+  recipientName: string;
+  recipientAddress: string;
+  packageDescription?: string;
+  trackingEvents: Array<{
+    status: string;
+    location?: string;
+    description: string;
+    timestamp: string;
+  }>;
+}
 
 export default function Landing() {
+  const [trackingId, setTrackingId] = useState("");
+  const [searchTriggered, setSearchTriggered] = useState(false);
+
+  const { data: trackingResult, isLoading, error } = useQuery<TrackingResult>({
+    queryKey: ["/api/track", trackingId],
+    enabled: searchTriggered && trackingId.length > 0,
+    retry: false,
+  });
+
+  const handleTrack = () => {
+    if (trackingId.trim()) {
+      setSearchTriggered(true);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "delivered": return "text-green-600 dark:text-green-400";
+      case "out_for_delivery": return "text-blue-600 dark:text-blue-400";
+      case "in_transit": return "text-yellow-600 dark:text-yellow-400";
+      case "failed_delivery": return "text-red-600 dark:text-red-400";
+      default: return "text-gray-600 dark:text-gray-400";
+    }
+  };
+
+  const formatStatus = (status: string) => {
+    return status.split("_").map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(" ");
+  };
+
   return (
-    <div className="min-h-screen bg-[hsl(240,10%,3.9%)] text-white flex items-center justify-center">
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        <div className="mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="w-16 h-16 bg-[hsl(207,90%,54%)] rounded-2xl flex items-center justify-center">
-              <i className="fas fa-coins text-white text-2xl"></i>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2">
+              <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">ShipTrack</span>
             </div>
-            <h1 className="text-4xl font-bold">CoinStats</h1>
+            <Button asChild>
+              <a href="/api/login">Admin Login</a>
+            </Button>
           </div>
-          <h2 className="text-2xl font-semibold mb-4">Cryptocurrency Portfolio Tracker</h2>
-          <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-            Track your cryptocurrency investments with real-time prices, portfolio management, 
-            and comprehensive market data. Join thousands of crypto investors who trust CoinStats.
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            Track Your Package
+            <span className="block text-blue-600 dark:text-blue-400">Anytime, Anywhere</span>
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-12">
+            Enter your tracking ID below to get real-time updates on your shipment
+          </p>
+
+          {/* Tracking Input */}
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Track Your Package
+              </CardTitle>
+              <CardDescription>
+                Enter your tracking ID (format: ST-XXXXXXXXX)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <Input
+                  type="text"
+                  placeholder="ST-ABC123DEF"
+                  value={trackingId}
+                  onChange={(e) => {
+                    setTrackingId(e.target.value.toUpperCase());
+                    setSearchTriggered(false);
+                  }}
+                  onKeyPress={(e) => e.key === "Enter" && handleTrack()}
+                  className="text-lg"
+                />
+                <Button onClick={handleTrack} disabled={isLoading || !trackingId.trim()}>
+                  {isLoading ? "Tracking..." : "Track"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tracking Results */}
+          {searchTriggered && trackingId && (
+            <div className="mt-8 max-w-4xl mx-auto">
+              {isLoading && (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-2">Searching for your package...</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {error && (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Package Not Found
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      No package found with tracking ID: {trackingId}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Please check your tracking ID and try again
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {trackingResult && (
+                <div className="space-y-6">
+                  {/* Package Overview */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Package Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="font-semibold mb-2">Tracking Information</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">Tracking ID:</span>
+                              <span className="ml-2 font-mono">{trackingResult.trackingId}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Status:</span>
+                              <span className={`ml-2 font-semibold ${getStatusColor(trackingResult.currentStatus)}`}>
+                                {formatStatus(trackingResult.currentStatus)}
+                              </span>
+                            </div>
+                            {trackingResult.currentLocation && (
+                              <div className="flex items-center">
+                                <MapPin className="h-4 w-4 text-gray-500 mr-1" />
+                                <span className="text-gray-500">Location:</span>
+                                <span className="ml-2">{trackingResult.currentLocation}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">Delivery Information</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">Recipient:</span>
+                              <span className="ml-2">{trackingResult.recipientName}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Address:</span>
+                              <span className="ml-2">{trackingResult.recipientAddress}</span>
+                            </div>
+                            {trackingResult.estimatedDelivery && (
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 text-gray-500 mr-1" />
+                                <span className="text-gray-500">Est. Delivery:</span>
+                                <span className="ml-2">
+                                  {new Date(trackingResult.estimatedDelivery).toLocaleDateString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Tracking Timeline */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        Tracking History
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {trackingResult.trackingEvents.map((event, index) => (
+                          <div key={index} className="flex items-start gap-4">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className={`w-3 h-3 rounded-full ${
+                                index === 0 ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                              }`}></div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className={`font-semibold ${getStatusColor(event.status)}`}>
+                                    {formatStatus(event.status)}
+                                  </p>
+                                  <p className="text-gray-600 dark:text-gray-300">
+                                    {event.description}
+                                  </p>
+                                  {event.location && (
+                                    <p className="text-sm text-gray-500 flex items-center mt-1">
+                                      <MapPin className="h-3 w-3 mr-1" />
+                                      {event.location}
+                                    </p>
+                                  )}
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2 sm:mt-0">
+                                  {new Date(event.timestamp).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+            Why Choose ShipTrack?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Truck className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Real-Time Tracking</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Get instant updates on your package location and delivery status
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Shield className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Secure & Reliable</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Your package information is protected with enterprise-grade security
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <Clock className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">24/7 Support</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Track your packages anytime, anywhere with our always-on service
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <Package className="h-6 w-6" />
+            <span className="text-xl font-bold">ShipTrack</span>
+          </div>
+          <p className="text-gray-400">
+            Professional shipping and delivery tracking service
           </p>
         </div>
-
-        <Card className="bg-[hsl(240,3.7%,15.9%)] border-[hsl(240,3.7%,15.9%)] mb-8">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[hsl(207,90%,54%)] rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <i className="fas fa-chart-line text-white"></i>
-                </div>
-                <h3 className="font-semibold mb-2">Real-Time Prices</h3>
-                <p className="text-gray-400 text-sm">
-                  Live cryptocurrency prices powered by CoinGecko API with 30-second updates
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[hsl(142,76%,36%)] rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <i className="fas fa-wallet text-white"></i>
-                </div>
-                <h3 className="font-semibold mb-2">Portfolio Tracking</h3>
-                <p className="text-gray-400 text-sm">
-                  Comprehensive portfolio management with holdings, transactions, and performance metrics
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[hsl(258,90%,66%)] rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <i className="fas fa-gem text-white"></i>
-                </div>
-                <h3 className="font-semibold mb-2">NFT Collections</h3>
-                <p className="text-gray-400 text-sm">
-                  Track top NFT collections with floor prices and 24h percentage changes
-                </p>
-              </div>
-            </div>
-
-            <Button 
-              onClick={() => window.location.href = '/api/login'}
-              className="bg-[hsl(207,90%,54%)] hover:bg-[hsl(207,90%,48%)] text-white px-8 py-3 text-lg rounded-lg"
-            >
-              Get Started - Sign In
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="text-sm text-gray-500">
-          <p>Free to use • Real market data • Secure authentication</p>
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }

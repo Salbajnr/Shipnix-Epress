@@ -1,55 +1,40 @@
 import {
   users,
-  cryptocurrencies,
-  portfolios,
-  holdings,
-  transactions,
-  nftCollections,
+  packages,
+  trackingEvents,
   type User,
   type UpsertUser,
-  type Cryptocurrency,
-  type InsertCryptocurrency,
-  type Portfolio,
-  type InsertPortfolio,
-  type Holding,
-  type InsertHolding,
-  type Transaction,
-  type InsertTransaction,
-  type NFTCollection,
-  type InsertNFTCollection,
+  type Package,
+  type TrackingEvent,
+  type InsertPackage,
+  type InsertTrackingEvent,
+  PACKAGE_STATUSES,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
+// Interface for storage operations
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
 
-  // Cryptocurrency operations
-  upsertCryptocurrency(crypto: InsertCryptocurrency): Promise<Cryptocurrency>;
-  getCryptocurrencies(): Promise<Cryptocurrency[]>;
-  getTopCryptocurrencies(limit?: number): Promise<Cryptocurrency[]>;
+  // Package operations
+  createPackage(packageData: InsertPackage): Promise<Package>;
+  getPackageByTrackingId(trackingId: string): Promise<Package | undefined>;
+  getPackageById(id: number): Promise<Package | undefined>;
+  getAllPackages(limit?: number): Promise<Package[]>;
+  updatePackageStatus(id: number, status: string, location?: string): Promise<Package>;
+  updatePackage(id: number, updates: Partial<InsertPackage>): Promise<Package>;
 
-  // Portfolio operations
-  createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio>;
-  getPortfolioByUserId(userId: string): Promise<Portfolio | undefined>;
-  
-  // Holdings operations
-  upsertHolding(holding: InsertHolding): Promise<Holding>;
-  getHoldingsByPortfolioId(portfolioId: number): Promise<(Holding & { cryptocurrency: Cryptocurrency })[]>;
-  
-  // Transaction operations
-  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  getTransactionsByPortfolioId(portfolioId: number, limit?: number): Promise<(Transaction & { cryptocurrency: Cryptocurrency })[]>;
-  
-  // NFT operations
-  upsertNFTCollection(nft: InsertNFTCollection): Promise<NFTCollection>;
-  getTopNFTCollections(limit?: number): Promise<NFTCollection[]>;
+  // Tracking event operations
+  addTrackingEvent(event: InsertTrackingEvent): Promise<TrackingEvent>;
+  getTrackingEventsByPackageId(packageId: number): Promise<TrackingEvent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations
+  // User operations (mandatory for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -70,146 +55,125 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Cryptocurrency operations
-  async upsertCryptocurrency(crypto: InsertCryptocurrency): Promise<Cryptocurrency> {
-    const [cryptocurrency] = await db
-      .insert(cryptocurrencies)
-      .values(crypto)
-      .onConflictDoUpdate({
-        target: cryptocurrencies.id,
-        set: {
-          ...crypto,
-          lastUpdated: new Date(),
-        },
+  // Package operations
+  async createPackage(packageData: InsertPackage): Promise<Package> {
+    // Generate unique tracking ID
+    const trackingId = this.generateTrackingId();
+    
+    const [newPackage] = await db
+      .insert(packages)
+      .values({
+        ...packageData,
+        trackingId,
+        currentStatus: PACKAGE_STATUSES.CREATED,
       })
       .returning();
-    return cryptocurrency;
+
+    // Add initial tracking event
+    await this.addTrackingEvent({
+      packageId: newPackage.id,
+      status: PACKAGE_STATUSES.CREATED,
+      location: "Package created in system",
+      description: "Package has been registered for shipping",
+    });
+
+    return newPackage;
   }
 
-  async getCryptocurrencies(): Promise<Cryptocurrency[]> {
-    return await db.select().from(cryptocurrencies);
+  async getPackageByTrackingId(trackingId: string): Promise<Package | undefined> {
+    const [packageData] = await db
+      .select()
+      .from(packages)
+      .where(eq(packages.trackingId, trackingId));
+    return packageData;
   }
 
-  async getTopCryptocurrencies(limit = 10): Promise<Cryptocurrency[]> {
+  async getPackageById(id: number): Promise<Package | undefined> {
+    const [packageData] = await db
+      .select()
+      .from(packages)
+      .where(eq(packages.id, id));
+    return packageData;
+  }
+
+  async getAllPackages(limit = 50): Promise<Package[]> {
     return await db
       .select()
-      .from(cryptocurrencies)
-      .orderBy(cryptocurrencies.marketCapRank)
+      .from(packages)
+      .orderBy(desc(packages.createdAt))
       .limit(limit);
   }
 
-  // Portfolio operations
-  async createPortfolio(portfolio: InsertPortfolio): Promise<Portfolio> {
-    const [newPortfolio] = await db.insert(portfolios).values(portfolio).returning();
-    return newPortfolio;
-  }
-
-  async getPortfolioByUserId(userId: string): Promise<Portfolio | undefined> {
-    const [portfolio] = await db
-      .select()
-      .from(portfolios)
-      .where(and(eq(portfolios.userId, userId), eq(portfolios.isDefault, true)));
-    return portfolio;
-  }
-
-  // Holdings operations
-  async upsertHolding(holding: InsertHolding): Promise<Holding> {
-    const [existingHolding] = await db
-      .select()
-      .from(holdings)
-      .where(
-        and(
-          eq(holdings.portfolioId, holding.portfolioId),
-          eq(holdings.cryptoId, holding.cryptoId)
-        )
-      );
-
-    if (existingHolding) {
-      const [updatedHolding] = await db
-        .update(holdings)
-        .set({
-          amount: holding.amount,
-          averageCost: holding.averageCost,
-          updatedAt: new Date(),
-        })
-        .where(eq(holdings.id, existingHolding.id))
-        .returning();
-      return updatedHolding;
-    } else {
-      const [newHolding] = await db.insert(holdings).values(holding).returning();
-      return newHolding;
-    }
-  }
-
-  async getHoldingsByPortfolioId(portfolioId: number): Promise<(Holding & { cryptocurrency: Cryptocurrency })[]> {
-    const results = await db
-      .select({
-        id: holdings.id,
-        portfolioId: holdings.portfolioId,
-        cryptoId: holdings.cryptoId,
-        amount: holdings.amount,
-        averageCost: holdings.averageCost,
-        updatedAt: holdings.updatedAt,
-        cryptocurrency: cryptocurrencies,
+  async updatePackageStatus(id: number, status: string, location?: string): Promise<Package> {
+    const [updatedPackage] = await db
+      .update(packages)
+      .set({
+        currentStatus: status,
+        currentLocation: location,
+        updatedAt: new Date(),
+        ...(status === PACKAGE_STATUSES.DELIVERED && { actualDelivery: new Date() }),
       })
-      .from(holdings)
-      .innerJoin(cryptocurrencies, eq(holdings.cryptoId, cryptocurrencies.id))
-      .where(eq(holdings.portfolioId, portfolioId));
-    
-    return results.filter(result => result.cryptocurrency !== null) as (Holding & { cryptocurrency: Cryptocurrency })[];
-  }
-
-  // Transaction operations
-  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
-    const [newTransaction] = await db.insert(transactions).values(transaction).returning();
-    return newTransaction;
-  }
-
-  async getTransactionsByPortfolioId(portfolioId: number, limit = 10): Promise<(Transaction & { cryptocurrency: Cryptocurrency })[]> {
-    const results = await db
-      .select({
-        id: transactions.id,
-        portfolioId: transactions.portfolioId,
-        cryptoId: transactions.cryptoId,
-        type: transactions.type,
-        amount: transactions.amount,
-        price: transactions.price,
-        totalValue: transactions.totalValue,
-        isSimulated: transactions.isSimulated,
-        createdAt: transactions.createdAt,
-        cryptocurrency: cryptocurrencies,
-      })
-      .from(transactions)
-      .innerJoin(cryptocurrencies, eq(transactions.cryptoId, cryptocurrencies.id))
-      .where(eq(transactions.portfolioId, portfolioId))
-      .orderBy(desc(transactions.createdAt))
-      .limit(limit);
-    
-    return results.filter(result => result.cryptocurrency !== null) as (Transaction & { cryptocurrency: Cryptocurrency })[];
-  }
-
-  // NFT operations
-  async upsertNFTCollection(nft: InsertNFTCollection): Promise<NFTCollection> {
-    const [nftCollection] = await db
-      .insert(nftCollections)
-      .values(nft)
-      .onConflictDoUpdate({
-        target: nftCollections.slug,
-        set: {
-          ...nft,
-          lastUpdated: new Date(),
-        },
-      })
+      .where(eq(packages.id, id))
       .returning();
-    return nftCollection;
+
+    // Add tracking event for status change
+    await this.addTrackingEvent({
+      packageId: id,
+      status,
+      location: location || "",
+      description: this.getStatusDescription(status),
+    });
+
+    return updatedPackage;
   }
 
-  async getTopNFTCollections(limit = 10): Promise<NFTCollection[]> {
+  async updatePackage(id: number, updates: Partial<InsertPackage>): Promise<Package> {
+    const [updatedPackage] = await db
+      .update(packages)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(packages.id, id))
+      .returning();
+
+    return updatedPackage;
+  }
+
+  // Tracking event operations
+  async addTrackingEvent(event: InsertTrackingEvent): Promise<TrackingEvent> {
+    const [newEvent] = await db
+      .insert(trackingEvents)
+      .values(event)
+      .returning();
+    return newEvent;
+  }
+
+  async getTrackingEventsByPackageId(packageId: number): Promise<TrackingEvent[]> {
     return await db
       .select()
-      .from(nftCollections)
-      .orderBy(desc(nftCollections.floorPrice))
-      .limit(limit);
+      .from(trackingEvents)
+      .where(eq(trackingEvents.packageId, packageId))
+      .orderBy(desc(trackingEvents.timestamp));
+  }
+
+  // Helper methods
+  private generateTrackingId(): string {
+    // Generate a tracking ID in format: ST-XXXXXXXXX (ShipTrack-9chars)
+    return `ST-${nanoid(9).toUpperCase()}`;
+  }
+
+  private getStatusDescription(status: string): string {
+    const descriptions = {
+      [PACKAGE_STATUSES.CREATED]: "Package has been registered for shipping",
+      [PACKAGE_STATUSES.PICKED_UP]: "Package has been picked up by courier",
+      [PACKAGE_STATUSES.IN_TRANSIT]: "Package is on its way to destination",
+      [PACKAGE_STATUSES.OUT_FOR_DELIVERY]: "Package is out for delivery",
+      [PACKAGE_STATUSES.DELIVERED]: "Package has been successfully delivered",
+      [PACKAGE_STATUSES.FAILED_DELIVERY]: "Delivery attempt failed",
+      [PACKAGE_STATUSES.RETURNED]: "Package is being returned to sender",
+    };
+    return descriptions[status as keyof typeof descriptions] || "Status updated";
   }
 }
 
