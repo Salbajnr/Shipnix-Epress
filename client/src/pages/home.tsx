@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import { PACKAGE_STATUSES } from "@shared/schema";
+import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
 import type { Package as PackageType } from "@shared/schema";
 
 interface PackageFormData {
@@ -25,6 +25,8 @@ interface PackageFormData {
   packageDescription: string;
   weight: string;
   dimensions: string;
+  shippingCost: string;
+  paymentMethod: string;
   estimatedDelivery: string;
 }
 
@@ -45,6 +47,8 @@ export default function Home() {
     packageDescription: "",
     weight: "",
     dimensions: "",
+    shippingCost: "",
+    paymentMethod: "cash",
     estimatedDelivery: "",
   });
 
@@ -57,6 +61,7 @@ export default function Home() {
       const payload = {
         ...data,
         weight: data.weight ? parseFloat(data.weight) : null,
+        shippingCost: data.shippingCost ? parseFloat(data.shippingCost) : null,
         estimatedDelivery: data.estimatedDelivery ? new Date(data.estimatedDelivery).toISOString() : null,
       };
       return await apiRequest("/api/packages", {
@@ -97,6 +102,8 @@ export default function Home() {
       packageDescription: "",
       weight: "",
       dimensions: "",
+      shippingCost: "",
+      paymentMethod: "cash",
       estimatedDelivery: "",
     });
   };
@@ -124,6 +131,19 @@ export default function Home() {
     return status.split("_").map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ");
+  };
+
+  const formatPaymentMethod = (method: string) => {
+    const methods = {
+      cash: "Cash on Delivery",
+      card: "Credit/Debit Card",
+      bank_transfer: "Bank Transfer",
+      paypal: "PayPal",
+      bitcoin: "Bitcoin (BTC)",
+      ethereum: "Ethereum (ETH)",
+      usdc: "USD Coin (USDC)"
+    };
+    return methods[method as keyof typeof methods] || method;
   };
 
   return (
@@ -347,6 +367,42 @@ export default function Home() {
                       />
                     </div>
                   </div>
+
+                  {/* Shipping & Payment */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="shippingCost">Shipping Cost ($)</Label>
+                      <Input
+                        id="shippingCost"
+                        type="number"
+                        step="0.01"
+                        value={formData.shippingCost}
+                        onChange={(e) => handleInputChange("shippingCost", e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="paymentMethod">Payment Method</Label>
+                      <Select
+                        value={formData.paymentMethod}
+                        onValueChange={(value) => handleInputChange("paymentMethod", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cash">Cash on Delivery</SelectItem>
+                          <SelectItem value="card">Credit/Debit Card</SelectItem>
+                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="paypal">PayPal</SelectItem>
+                          <SelectItem value="bitcoin">Bitcoin (BTC)</SelectItem>
+                          <SelectItem value="ethereum">Ethereum (ETH)</SelectItem>
+                          <SelectItem value="usdc">USD Coin (USDC)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="estimatedDelivery">Estimated Delivery Date</Label>
                     <Input
@@ -410,6 +466,12 @@ export default function Home() {
                           </div>
                           <div>
                             <span className="font-medium">Description:</span> {pkg.packageDescription || "N/A"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Cost:</span> {pkg.shippingCost ? `$${pkg.shippingCost}` : "N/A"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Payment:</span> {formatPaymentMethod(pkg.paymentMethod)}
                           </div>
                           <div>
                             <span className="font-medium">Created:</span> {new Date(pkg.createdAt).toLocaleDateString()}

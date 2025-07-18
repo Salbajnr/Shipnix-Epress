@@ -14,6 +14,9 @@ interface TrackingResult {
   recipientName: string;
   recipientAddress: string;
   packageDescription?: string;
+  shippingCost?: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
   trackingEvents: Array<{
     status: string;
     location?: string;
@@ -52,6 +55,19 @@ export default function Landing() {
     return status.split("_").map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ");
+  };
+
+  const formatPaymentMethod = (method: string) => {
+    const methods = {
+      cash: "Cash on Delivery",
+      card: "Credit/Debit Card",
+      bank_transfer: "Bank Transfer",
+      paypal: "PayPal",
+      bitcoin: "Bitcoin (BTC)",
+      ethereum: "Ethereum (ETH)",
+      usdc: "USD Coin (USDC)"
+    };
+    return methods[method as keyof typeof methods] || method;
   };
 
   return (
@@ -189,6 +205,18 @@ export default function Landing() {
                               <span className="text-gray-500">Address:</span>
                               <span className="ml-2">{trackingResult.recipientAddress}</span>
                             </div>
+                            {trackingResult.shippingCost && (
+                              <div>
+                                <span className="text-gray-500">Shipping Cost:</span>
+                                <span className="ml-2">${trackingResult.shippingCost}</span>
+                              </div>
+                            )}
+                            {trackingResult.paymentMethod && (
+                              <div>
+                                <span className="text-gray-500">Payment Method:</span>
+                                <span className="ml-2">{formatPaymentMethod(trackingResult.paymentMethod)}</span>
+                              </div>
+                            )}
                             {trackingResult.estimatedDelivery && (
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 text-gray-500 mr-1" />
