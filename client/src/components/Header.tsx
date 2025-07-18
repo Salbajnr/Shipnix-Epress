@@ -122,11 +122,27 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  onClick={() => {
+                    // Scroll to bottom to reveal live chat if it's there
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    // Try to trigger live chat opening
+                    const chatButton = document.querySelector('[data-chat-trigger]') as HTMLElement;
+                    if (chatButton) chatButton.click();
+                  }}
+                >
                   <MessageSquare className="h-4 w-4 mr-1" />
                   Live Chat
                 </Button>
-                <Button variant="outline" size="sm" asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50 font-medium"
+                  asChild
+                >
                   <a href="/api/login">Admin Login</a>
                 </Button>
                 <Link href="/login">
@@ -171,15 +187,30 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
               ))}
               {!showUserMenu && (
                 <div className="flex flex-col space-y-2 pt-4 border-t">
-                  <Button variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700 justify-start">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-blue-600 hover:text-blue-700 justify-start font-medium bg-blue-50 hover:bg-blue-100"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                      const chatButton = document.querySelector('[data-chat-trigger]') as HTMLElement;
+                      if (chatButton) chatButton.click();
+                    }}
+                  >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Live Chat
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <a href="/api/login">Admin Login</a>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 font-medium" 
+                    asChild
+                  >
+                    <a href="/api/login" onClick={() => setMobileMenuOpen(false)}>Admin Login</a>
                   </Button>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full font-medium">
                       Customer Sign In
                     </Button>
                   </Link>
