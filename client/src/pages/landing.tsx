@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck, MapPin, Clock, Shield, Search, Globe, Zap, Users, Award, Phone, Mail, ArrowRight, CheckCircle, Star, BarChart3, Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import shipnixLogo from "@/assets/shipnix-logo.png";
 
 interface TrackingResult {
   trackingId: string;
@@ -98,7 +99,7 @@ export default function Landing() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <img 
-                src="/attached_assets/Shipnix logo_1752803535936.png" 
+                src={shipnixLogo} 
                 alt="Shipnix-Express" 
                 className="h-12 w-auto transition-transform hover:scale-105"
               />
@@ -622,7 +623,7 @@ export default function Landing() {
           <div className="py-16 grid lg:grid-cols-4 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <img 
-                src="/attached_assets/Shipnix logo_1752803535936.png" 
+                src={shipnixLogo} 
                 alt="Shipnix-Express" 
                 className="h-10 w-auto"
               />
