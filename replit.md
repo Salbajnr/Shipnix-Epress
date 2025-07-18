@@ -1,8 +1,8 @@
-# CryptoTrader Pro - Advanced Cryptocurrency Trading Platform
+# Shipnix-Express - Global Logistics Solutions
 
 ## Overview
 
-CryptoTrader Pro is a comprehensive cryptocurrency tracking and simulation platform built with a modern full-stack architecture. The application provides real-time price data, portfolio management, simulated trading, and advanced features including smart notifications, portfolio insurance, referral rewards, mobile payment integration, multi-language support, secure document upload, and two-factor authentication. The platform uses a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections for live price updates.
+Shipnix-Express is a comprehensive global logistics and delivery tracking service built with a modern full-stack architecture. The application specializes in fast, dependable logistics solutions—delivering shipments quickly and securely to over 220 countries and territories. It features real-time status updates, delivery notifications, and a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
 
 ## User Preferences
 
@@ -113,16 +113,6 @@ The application uses PostgreSQL with the following main tables:
 - **Admin Dashboard**: Complete package creation and status management
 - **Status Workflow**: Seven-stage delivery process tracking
 - **Event History**: Detailed tracking timeline with locations and timestamps
-
-### Advanced Interactive Features (NEW)
-- **Smart Notifications**: Customizable push, email, and SMS notifications with quiet hours and delivery event preferences
-- **Insurance Calculator**: Real-time insurance quotes based on package value, destination, and category with risk assessment
-- **Referral Program**: Multi-tier reward system with social sharing, email invites, and earnings tracking
-- **Mobile Payments**: Apple Pay, Google Pay, Samsung Pay, and PayPal integration with secure processing
-- **Multi-Language Support**: 25+ languages with automatic detection and RTL support for Arabic and Hebrew
-- **Currency Converter**: Real-time exchange rates for 35+ currencies with quick conversion tools
-- **Secure Document Upload**: AES-256 encrypted file storage with virus scanning and digital signatures
-- **Two-Factor Authentication**: Authenticator app, SMS, and email-based 2FA with backup codes
 - **Digital Payments**: Credit cards, bank transfers, PayPal, and cryptocurrency options (Bitcoin, Ethereum, USDC)
 - **Contract Logistics**: Comprehensive freight services and supply chain management
 
