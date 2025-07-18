@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users, FileText, CreditCard, BarChart3, QrCode, Mail, Phone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import shipnixLogo from "@/assets/shipnix-logo.png";
+import Logo from "@/components/Logo";
 import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
 import type { Package as PackageType, Quote, Invoice } from "@shared/schema";
 import PaymentMethods from "@/components/PaymentMethods";
@@ -157,11 +157,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <img 
-                src={shipnixLogo} 
-                alt="Shipnix-Express" 
-                className="h-10 w-auto"
-              />
+              <Logo className="h-10 w-10" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Global Logistics Management Dashboard</p>

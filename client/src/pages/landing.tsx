@@ -164,11 +164,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
-              <img 
-                src={shipnixLogo} 
-                alt="Shipnix-Express" 
-                className="h-12 w-auto transition-transform hover:scale-105"
-              />
+              <Logo className="h-12 w-12 transition-transform hover:scale-105" />
             </div>
             
             {/* Desktop Navigation */}
@@ -702,11 +698,7 @@ export default function Landing() {
           {/* Main Footer */}
           <div className="py-16 grid lg:grid-cols-4 md:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <img 
-                src={shipnixLogo} 
-                alt="Shipnix-Express" 
-                className="h-10 w-auto"
-              />
+              <Logo className="h-10 w-10" />
               <p className="text-gray-400 leading-relaxed">
                 The world's most advanced logistics platform. Connecting businesses to 220+ countries with AI-powered shipping solutions.
               </p>
