@@ -7,9 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
+import Admin from "@/pages/admin";
+import Profile from "@/pages/profile";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
@@ -17,7 +20,11 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={Home} />
+          <Route path="/" component={() => user?.role === "admin" ? <Admin /> : <Dashboard />} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/admin" component={Admin} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/admin-portal" component={Home} />
         </>
       )}
       <Route component={NotFound} />

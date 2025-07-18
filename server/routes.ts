@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertPackageSchema, insertTrackingEventSchema, PACKAGE_STATUSES } from "@shared/schema";
+import { insertPackageSchema, insertTrackingEventSchema, insertAddressSchema, insertNotificationSchema, PACKAGE_STATUSES, NOTIFICATION_TYPES, USER_ROLES } from "@shared/schema";
+import { EmailService } from "./services/emailService";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -32,7 +33,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const newPackage = await storage.createPackage(packageData);
+
+      // Send email notification to recipient
+      if (newPackage.recipientEmail) {
+        try {
+          await EmailService.sendPackageCreatedEmail({
+            recipientEmail: newPackage.recipientEmail,
+            recipientName: newPackage.recipientName,
+            trackingId: newPackage.trackingId,
+            senderName: newPackage.senderName,
+            packageDescription: newPackage.packageDescription || "Package",
+            shippingCost: newPackage.shippingCost?.toString() || "0",
+            estimatedDelivery: newPackage.estimatedDelivery?.toISOString() || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            paymentMethod: newPackage.paymentMethod || "card",
+          });
+
+          // Create notification for recipient
+          if (newPackage.recipientEmail) {
+            const recipientUser = await storage.getUserByEmail?.(newPackage.recipientEmail);
+            if (recipientUser) {
+              await storage.createNotification({
+                userId: recipientUser.id,
+                packageId: newPackage.id,
+                type: NOTIFICATION_TYPES.PACKAGE_UPDATE,
+                title: "New Package Created",
+                message: `Package ${newPackage.trackingId} has been created by ${newPackage.senderName}. Payment required to process shipment.`,
+              });
+            }
+          }
+        } catch (emailError) {
+          console.error("Failed to send email notification:", emailError);
+          // Don't fail the package creation if email fails
+        }
+      }
+
       res.json(newPackage);
+
+      // Broadcast to WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: "packageCreated",
+            data: newPackage,
+          }));
+        }
+      });
     } catch (error) {
       console.error("Error creating package:", error);
       if (error instanceof z.ZodError) {
@@ -172,14 +217,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User-specific routes
+  app.get("/api/user/packages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const packages = await storage.getUserPackages(userId);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching user packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/user/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getUserNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/user/notifications/:id/read", isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      await storage.markNotificationAsRead(notificationId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.get("/api/user/addresses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const addresses = await storage.getUserAddresses(userId);
+      res.json(addresses);
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      res.status(500).json({ message: "Failed to fetch addresses" });
+    }
+  });
+
+  app.post("/api/user/addresses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const addressData = insertAddressSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      const newAddress = await storage.createAddress(addressData);
+      res.json(newAddress);
+    } catch (error) {
+      console.error("Error creating address:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid address data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create address" });
+    }
+  });
+
+  app.patch("/api/user/addresses/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const addressId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const updatedAddress = await storage.updateAddress(addressId, updates);
+      res.json(updatedAddress);
+    } catch (error) {
+      console.error("Error updating address:", error);
+      res.status(500).json({ message: "Failed to update address" });
+    }
+  });
+
+  app.delete("/api/user/addresses/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const addressId = parseInt(req.params.id);
+      await storage.deleteAddress(addressId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      res.status(500).json({ message: "Failed to delete address" });
+    }
+  });
+
+  app.patch("/api/user/profile", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const updates = req.body;
+      
+      const updatedUser = await storage.updateUserProfile(userId, updates);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.get("/api/user/support-tickets", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const tickets = await storage.getUserSupportTickets(userId);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
   // Admin routes for package management
   app.get("/api/admin/packages", isAuthenticated, async (req: any, res) => {
     try {
+      const userRole = req.user.claims.role || USER_ROLES.CUSTOMER;
+      if (userRole !== USER_ROLES.ADMIN && userRole !== USER_ROLES.AGENT) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
       const packages = await storage.getAllPackages();
       res.json(packages);
     } catch (error) {
       console.error("Error fetching admin packages:", error);
       res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/admin/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user.claims.role || USER_ROLES.CUSTOMER;
+      if (userRole !== USER_ROLES.ADMIN) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/admin/support-tickets", isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user.claims.role || USER_ROLES.CUSTOMER;
+      if (userRole !== USER_ROLES.ADMIN && userRole !== USER_ROLES.SUPPORT) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const tickets = await storage.getAllSupportTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.get("/api/admin/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user.claims.role || USER_ROLES.CUSTOMER;
+      if (userRole !== USER_ROLES.ADMIN) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      // Get analytics data
+      const packages = await storage.getAllPackages();
+      const users = await storage.getAllUsers();
+      const supportTickets = await storage.getAllSupportTickets();
+
+      const analytics = {
+        totalPackages: packages.length,
+        totalUsers: users.length,
+        totalRevenue: packages.reduce((sum, pkg) => sum + (parseFloat(pkg.shippingCost?.toString() || "0")), 0),
+        packagesThisMonth: packages.filter(pkg => 
+          new Date(pkg.createdAt).getMonth() === new Date().getMonth()
+        ).length,
+        deliveredPackages: packages.filter(pkg => pkg.currentStatus === PACKAGE_STATUSES.DELIVERED).length,
+        openTickets: supportTickets.filter(ticket => ticket.status === "open").length,
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
 
