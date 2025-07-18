@@ -60,8 +60,15 @@ export const packages = pgTable("packages", {
   cryptoTxHash: varchar("crypto_tx_hash", { length: 100 }),
   estimatedDelivery: timestamp("estimated_delivery"),
   actualDelivery: timestamp("actual_delivery"),
+  scheduledDeliveryDate: timestamp("scheduled_delivery_date"),
+  scheduledTimeSlot: varchar("scheduled_time_slot", { length: 20 }), // morning, afternoon, evening
+  deliveryPriceAdjustment: decimal("delivery_price_adjustment", { precision: 10, scale: 2 }).default("0"),
+  qrCode: text("qr_code"), // Base64 encoded QR code
+  qrCodeUrl: varchar("qr_code_url", { length: 500 }), // URL to QR code image
   currentStatus: varchar("current_status", { length: 50 }).notNull().default("created"),
   currentLocation: text("current_location"),
+  deliveryInstructions: text("delivery_instructions"),
+  signatureRequired: boolean("signature_required").default(false),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -132,6 +139,21 @@ export const notifications = pgTable("notifications", {
   status: varchar("status", { length: 20 }).default("pending"), // pending, sent, failed
   sentAt: timestamp("sent_at"),
   errorMessage: text("error_message"),
+  autoSend: boolean("auto_send").default(true), // Auto-send on status change
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Chat messages table for admin-user communication
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 100 }).notNull(), // Unique session identifier
+  packageId: integer("package_id").references(() => packages.id), // Optional package reference
+  senderId: varchar("sender_id").references(() => users.id), // Admin user ID (null for anonymous users)
+  senderType: varchar("sender_type", { length: 20 }).notNull(), // "admin", "user", "bot"
+  senderName: varchar("sender_name", { length: 100 }),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  metadata: jsonb("metadata"), // Additional data like attachments, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -185,6 +207,17 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+  package: one(packages, {
+    fields: [chatMessages.packageId],
+    references: [packages.id],
+  }),
+}));
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -194,6 +227,7 @@ export type TrackingEvent = typeof trackingEvents.$inferSelect;
 export type Quote = typeof quotes.$inferSelect;
 export type Invoice = typeof invoices.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type ChatMessage = typeof chatMessages.$inferSelect;
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -232,12 +266,18 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type InsertTrackingEvent = z.infer<typeof insertTrackingEventSchema>;
 export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Package status constants
 export const PACKAGE_STATUSES = {
@@ -271,6 +311,24 @@ export const PAYMENT_STATUSES = {
   REFUNDED: "refunded",
 } as const;
 
+// Delivery time slot constants
+export const DELIVERY_TIME_SLOTS = {
+  MORNING: "morning", // 8AM - 12PM (+$0)
+  AFTERNOON: "afternoon", // 12PM - 5PM (+$5)
+  EVENING: "evening", // 5PM - 8PM (+$15)
+  EXPRESS: "express", // Same day (+$25)
+  WEEKEND: "weekend", // Saturday/Sunday (+$20)
+} as const;
+
+// Chat sender types
+export const CHAT_SENDER_TYPES = {
+  ADMIN: "admin",
+  USER: "user",
+  BOT: "bot",
+} as const;
+
 export type PackageStatus = typeof PACKAGE_STATUSES[keyof typeof PACKAGE_STATUSES];
 export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
 export type PaymentStatus = typeof PAYMENT_STATUSES[keyof typeof PAYMENT_STATUSES];
+export type DeliveryTimeSlot = typeof DELIVERY_TIME_SLOTS[keyof typeof DELIVERY_TIME_SLOTS];
+export type ChatSenderType = typeof CHAT_SENDER_TYPES[keyof typeof CHAT_SENDER_TYPES];

@@ -5,6 +5,7 @@ import {
   quotes,
   invoices,
   notifications,
+  chatMessages,
   type User,
   type UpsertUser,
   type Package,
@@ -12,16 +13,19 @@ import {
   type Quote,
   type Invoice,
   type Notification,
+  type ChatMessage,
   type InsertPackage,
   type InsertTrackingEvent,
   type InsertQuote,
   type InsertInvoice,
   type InsertNotification,
+  type InsertChatMessage,
   PACKAGE_STATUSES,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import QRCode from 'qrcode';
 
 // Interface for storage operations
 export interface IStorage {
@@ -59,6 +63,12 @@ export interface IStorage {
   createNotification(notificationData: InsertNotification): Promise<Notification>;
   getNotificationsByPackageId(packageId: number): Promise<Notification[]>;
   updateNotificationStatus(id: number, status: string, sentAt?: Date, errorMessage?: string): Promise<Notification>;
+
+  // Chat operations
+  createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessagesBySessionId(sessionId: string): Promise<ChatMessage[]>;
+  getChatMessagesByPackageId(packageId: number): Promise<ChatMessage[]>;
+  markChatMessagesAsRead(sessionId: string, senderType?: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -88,11 +98,44 @@ export class DatabaseStorage implements IStorage {
     // Generate unique tracking ID
     const trackingId = this.generateTrackingId();
     
+    // Generate QR code for the tracking ID
+    const qrCodeDataUrl = await QRCode.toDataURL(trackingId, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
+    // Calculate delivery price adjustment based on time slot
+    let deliveryPriceAdjustment = 0;
+    if (packageData.scheduledTimeSlot) {
+      switch (packageData.scheduledTimeSlot) {
+        case 'afternoon':
+          deliveryPriceAdjustment = 5;
+          break;
+        case 'evening':
+          deliveryPriceAdjustment = 15;
+          break;
+        case 'express':
+          deliveryPriceAdjustment = 25;
+          break;
+        case 'weekend':
+          deliveryPriceAdjustment = 20;
+          break;
+        default: // morning
+          deliveryPriceAdjustment = 0;
+      }
+    }
+    
     const [newPackage] = await db
       .insert(packages)
       .values({
         ...packageData,
         trackingId,
+        qrCode: qrCodeDataUrl,
+        deliveryPriceAdjustment: deliveryPriceAdjustment.toString(),
         currentStatus: PACKAGE_STATUSES.CREATED,
       })
       .returning();
@@ -316,6 +359,49 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedNotification;
+  }
+
+  // Chat operations
+  async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const [newMessage] = await db
+      .insert(chatMessages)
+      .values(messageData)
+      .returning();
+    return newMessage;
+  }
+
+  async getChatMessagesBySessionId(sessionId: string): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.sessionId, sessionId))
+      .orderBy(chatMessages.createdAt);
+  }
+
+  async getChatMessagesByPackageId(packageId: number): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.packageId, packageId))
+      .orderBy(chatMessages.createdAt);
+  }
+
+  async markChatMessagesAsRead(sessionId: string, senderType?: string): Promise<void> {
+    const whereCondition = senderType 
+      ? and(eq(chatMessages.sessionId, sessionId), eq(chatMessages.senderType, senderType))
+      : eq(chatMessages.sessionId, sessionId);
+
+    await db
+      .update(chatMessages)
+      .set({ isRead: true })
+      .where(whereCondition);
+  }
+
+  // Generate unique tracking ID (ST-XXXXXXXX format)
+  private generateTrackingId(): string {
+    const prefix = "ST-";
+    const randomId = nanoid(8).toUpperCase();
+    return prefix + randomId;
   }
 
   // Generate unique quote number (QT-XXXXXXXX format)

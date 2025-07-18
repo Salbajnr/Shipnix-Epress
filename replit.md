@@ -17,7 +17,7 @@ Preferred communication style: Simple, everyday language.
 - **Styling**: Tailwind CSS with custom CSS variables for theming
 - **State Management**: TanStack React Query for server state management
 - **Routing**: Wouter for client-side routing
-- **Charts**: Chart.js for price visualization
+- **QR Code Integration**: QR code generation and display capabilities
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js framework
@@ -25,8 +25,9 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Neon serverless database
 - **ORM**: Drizzle ORM for type-safe database operations
 - **Authentication**: Replit OIDC with session-based auth
-- **Real-time**: WebSocket connections for live price updates
-- **API Integration**: CoinGecko API for cryptocurrency data
+- **Real-time**: WebSocket connections for live package updates
+- **Notifications**: Automated SMS/Email service integration
+- **QR Generation**: Server-side QR code creation with qrcode library
 
 ## Key Components
 
@@ -34,8 +35,12 @@ Preferred communication style: Simple, everyday language.
 The application uses PostgreSQL with the following main tables:
 - `users`: User authentication and profile data (required for Replit Auth)
 - `sessions`: Session storage for authentication (required for Replit Auth)
-- `packages`: Package information including sender/recipient details, tracking ID, and status
+- `packages`: Package information with sender/recipient details, tracking ID, status, QR codes, and delivery scheduling
 - `tracking_events`: Historical events and status updates for each package
+- `notifications`: SMS/Email notification tracking and delivery status
+- `chat_messages`: Real-time messaging between admins and users
+- `quotes`: Service quotations and pricing estimates
+- `invoices`: Billing and payment processing records
 
 ### Authentication System
 - **Provider**: Replit OIDC integration
@@ -110,7 +115,10 @@ The application uses PostgreSQL with the following main tables:
 - **Real-time Updates**: WebSocket connections for live package tracking
 - **Global Logistics**: Comprehensive shipping to 220+ countries and territories
 - **Public Tracking**: Anonymous package lookup by tracking ID
-- **Admin Dashboard**: Complete package creation and status management
+- **Admin Dashboard**: Complete package creation and status management with advanced features
+- **QR Code Integration**: Automatic QR code generation for instant package tracking
+- **Delivery Scheduling**: Time slot selection with dynamic pricing adjustments
+- **Automated Notifications**: SMS and email alerts for all status changes
 - **Status Workflow**: Seven-stage delivery process tracking
 - **Event History**: Detailed tracking timeline with locations and timestamps
 - **Digital Payments**: Credit cards, bank transfers, PayPal, and cryptocurrency options (Bitcoin, Ethereum, USDC)
@@ -118,8 +126,9 @@ The application uses PostgreSQL with the following main tables:
 - **Customer Authentication**: Social login with Google, Facebook, and Apple
 - **Theme Support**: Dark/light mode toggle with persistent preferences
 - **Interactive FAQ**: Expandable FAQ sections with category filtering
-- **Live Chat**: Real-time customer support integration
+- **Live Chat**: Real-time admin-user communication system
 - **Customer Registration**: Complete onboarding flow for new users
+- **Smart Pricing**: Dynamic delivery fees based on time slots and requirements
 
 ## Recent Enhancements (January 2025)
 - ✅ Enhanced UI with vibrant color palette and modern gradients
@@ -130,5 +139,11 @@ The application uses PostgreSQL with the following main tables:
 - ✅ Unified navigation with Header component across all pages
 - ✅ Fixed React component conflicts and duplicate navbar issues
 - ✅ Created SVG logo component to replace static images
+- ✅ Enhanced admin dashboard with advanced shipment registration
+- ✅ Implemented QR code generation for package tracking
+- ✅ Added delivery scheduling with time slots and dynamic pricing
+- ✅ Built automated SMS/Email notification system
+- ✅ Integrated real-time chat API for admin-user communication
+- ✅ Added notification service with status update automation
 
 The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure optimized for global shipping and logistics operations.
