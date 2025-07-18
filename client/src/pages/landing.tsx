@@ -4,9 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck, MapPin, Clock, Shield, Search, Globe, Zap, Users, Award, Phone, Mail, ArrowRight, CheckCircle, Star, BarChart3, Menu, X, LogIn, Calculator, FileText, CreditCard } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import shipnixLogo from "@/assets/shipnix-logo.png";
+import Header from "@/components/Header";
+import Logo from "@/components/Logo";
 import PaymentMethods from "@/components/PaymentMethods";
 import LiveChat from "@/components/LiveChat";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 interface QuoteRequest {
   customerName: string;
@@ -143,6 +146,8 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 relative overflow-x-hidden">
+      <Header showUserMenu={false} />
+      
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
