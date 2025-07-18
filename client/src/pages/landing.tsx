@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck, MapPin, Clock, Shield, Search, Globe, Zap, Users, Award, Phone, Mail, ArrowRight, CheckCircle, Star, BarChart3, Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-// Using an SVG logo inline to avoid asset loading issues
-const shipnixLogo = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzI1NjNFQiIvPgo8cGF0aCBkPSJNMTIgMTJIMjhWMTZIMTJWMTJaTTEyIDIwSDI0VjI0SDEyVjIwWk0xMiAyOEgyOFYzMkgxMlYyOFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=";
+import shipnixLogo from "@/assets/shipnix-logo.png";
 
 interface TrackingResult {
   trackingId: string;
@@ -89,6 +88,7 @@ export default function Landing() {
         <div className="absolute top-1/2 -left-40 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
+
       {/* Modern Header */}
       <header className={`fixed w-full z-50 transition-all duration-300 ${
         scrolled 
@@ -99,9 +99,9 @@ export default function Landing() {
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
               <img 
-                src="attached_assets/Shipnixlogo11.png" 
+                src={shipnixLogo} 
                 alt="Shipnix-Express" 
-                className="h-12 w-auto transition-transform hover:scale-105 mt-[2px] mb-[2px] ml-[11px] mr-[11px]"
+                className="h-12 w-auto transition-transform hover:scale-105"
               />
             </div>
             
@@ -149,6 +149,7 @@ export default function Landing() {
           </div>
         )}
       </header>
+
       {/* Hero Section */}
       <section id="hero" className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative">
         <div className="max-w-7xl mx-auto">
@@ -238,6 +239,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
       {/* Real-time Tracking Section */}
       <section id="tracking" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto text-center">
@@ -455,6 +457,9 @@ export default function Landing() {
           )}
         </div>
       </section>
+
+
+
       {/* Advanced Features Section */}
       <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-7xl mx-auto">
@@ -588,6 +593,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
@@ -609,6 +615,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
       {/* Modern Footer */}
       <footer className="bg-gray-900 dark:bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
