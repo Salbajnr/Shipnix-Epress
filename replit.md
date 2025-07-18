@@ -1,8 +1,8 @@
-# ShipTrack - Shipping and Delivery Tracking Service
+# Shipnix-Express - Global Logistics Solutions
 
 ## Overview
 
-ShipTrack is a comprehensive shipping and delivery tracking service built with a modern full-stack architecture. The application allows administrators to generate unique tracking IDs for packages and enables recipients to track their items using those tracking IDs. It features real-time status updates, delivery notifications, and a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
+Shipnix-Express is a comprehensive global logistics and delivery tracking service built with a modern full-stack architecture. The application specializes in fast, dependable logistics solutions—delivering shipments quickly and securely to over 220 countries and territories. It features real-time status updates, delivery notifications, and a responsive React frontend with a Node.js/Express backend, PostgreSQL database, and real-time WebSocket connections.
 
 ## User Preferences
 
@@ -108,10 +108,12 @@ The application uses PostgreSQL with the following main tables:
 ### Key Features
 - **Responsive Design**: Mobile-first with desktop optimization
 - **Real-time Updates**: WebSocket connections for live package tracking
-- **Package Management**: Comprehensive shipping and delivery tracking
+- **Global Logistics**: Comprehensive shipping to 220+ countries and territories
 - **Public Tracking**: Anonymous package lookup by tracking ID
 - **Admin Dashboard**: Complete package creation and status management
 - **Status Workflow**: Seven-stage delivery process tracking
 - **Event History**: Detailed tracking timeline with locations and timestamps
+- **Digital Payments**: Credit cards, bank transfers, PayPal, and cryptocurrency options (Bitcoin, Ethereum, USDC)
+- **Contract Logistics**: Comprehensive freight services and supply chain management
 
-The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure optimized for shipping and logistics operations.
+The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure optimized for global shipping and logistics operations.
