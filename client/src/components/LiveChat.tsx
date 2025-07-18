@@ -122,15 +122,29 @@ export default function LiveChat() {
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full btn-gradient shadow-xl-colored relative"
-        >
-          <MessageCircle className="h-6 w-6" />
-          {adminOnline && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-400 rounded-full border-2 border-white"></span>
-          )}
-        </Button>
+        <div className="relative">
+          {/* Pulsing effect ring */}
+          <div className="absolute inset-0 h-14 w-14 rounded-full btn-gradient animate-pulse opacity-75"></div>
+          
+          <Button
+            onClick={() => {
+              console.log('Live chat button clicked');
+              setIsOpen(true);
+            }}
+            className="h-14 w-14 rounded-full btn-gradient shadow-xl-colored relative hover:scale-105 transition-transform"
+            data-chat-trigger="true"
+          >
+            <MessageCircle className="h-6 w-6" />
+            {adminOnline && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-green-400 rounded-full border-2 border-white animate-bounce"></span>
+            )}
+          </Button>
+
+          {/* Floating tooltip */}
+          <div className="absolute bottom-16 right-0 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+            Chat with support
+          </div>
+        </div>
       </div>
     );
   }
