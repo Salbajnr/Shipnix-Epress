@@ -3,15 +3,15 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { coinGeckoService } from "./services/coinGecko";
-import { insertTransactionSchema } from "@shared/schema";
+import { insertPackageSchema, insertTrackingEventSchema, PACKAGE_STATUSES } from "@shared/schema";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -22,224 +22,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cryptocurrency routes
-  app.get('/api/cryptocurrencies', async (req, res) => {
-    try {
-      const cryptos = await storage.getTopCryptocurrencies(10);
-      res.json(cryptos);
-    } catch (error) {
-      console.error("Error fetching cryptocurrencies:", error);
-      res.status(500).json({ message: "Failed to fetch cryptocurrencies" });
-    }
-  });
-
-  app.get('/api/cryptocurrencies/:id/history', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { days = '1' } = req.query;
-      const history = await coinGeckoService.getCryptocurrencyPriceHistory(id, parseInt(days as string));
-      res.json(history);
-    } catch (error) {
-      console.error(`Error fetching price history for ${req.params.id}:`, error);
-      res.status(500).json({ message: "Failed to fetch price history" });
-    }
-  });
-
-  // Portfolio routes
-  app.get('/api/portfolio', isAuthenticated, async (req: any, res) => {
+  // Package management routes
+  app.post("/api/packages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      let portfolio = await storage.getPortfolioByUserId(userId);
-      
-      if (!portfolio) {
-        portfolio = await storage.createPortfolio({
-          userId,
-          name: "Main Portfolio",
-          isDefault: true,
-        });
-      }
-
-      const holdings = await storage.getHoldingsByPortfolioId(portfolio.id);
-      const transactions = await storage.getTransactionsByPortfolioId(portfolio.id, 5);
-      
-      res.json({
-        portfolio,
-        holdings,
-        transactions,
-      });
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-      res.status(500).json({ message: "Failed to fetch portfolio" });
-    }
-  });
-
-  // Admin routes for simulating transactions
-  app.post('/api/admin/simulate-transaction', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const portfolio = await storage.getPortfolioByUserId(userId);
-      
-      if (!portfolio) {
-        return res.status(404).json({ message: "Portfolio not found" });
-      }
-
-      const transactionData = insertTransactionSchema.parse({
+      const packageData = insertPackageSchema.parse({
         ...req.body,
-        portfolioId: portfolio.id,
-        isSimulated: true,
+        createdBy: userId,
       });
 
-      const transaction = await storage.createTransaction(transactionData);
+      const newPackage = await storage.createPackage(packageData);
+      res.json(newPackage);
+    } catch (error) {
+      console.error("Error creating package:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid package data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create package" });
+    }
+  });
 
-      // Update holdings based on transaction
-      if (transactionData.type === 'buy') {
-        const existingHoldings = await storage.getHoldingsByPortfolioId(portfolio.id);
-        const existingHolding = existingHoldings.find(h => h.cryptoId === transactionData.cryptoId);
-        
-        if (existingHolding) {
-          const newAmount = parseFloat(existingHolding.amount) + parseFloat(transactionData.amount);
-          await storage.upsertHolding({
-            portfolioId: portfolio.id,
-            cryptoId: transactionData.cryptoId,
-            amount: newAmount.toString(),
-            averageCost: transactionData.price,
-          });
-        } else {
-          await storage.upsertHolding({
-            portfolioId: portfolio.id,
-            cryptoId: transactionData.cryptoId,
-            amount: transactionData.amount,
-            averageCost: transactionData.price,
-          });
+  app.get("/api/packages", isAuthenticated, async (req: any, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const packages = await storage.getAllPackages(limit);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/packages/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const packageData = await storage.getPackageById(id);
+      
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      res.json(packageData);
+    } catch (error) {
+      console.error("Error fetching package:", error);
+      res.status(500).json({ message: "Failed to fetch package" });
+    }
+  });
+
+  app.patch("/api/packages/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, location } = req.body;
+
+      if (!Object.values(PACKAGE_STATUSES).includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const updatedPackage = await storage.updatePackageStatus(id, status, location);
+      res.json(updatedPackage);
+
+      // Broadcast update to WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: "packageUpdate",
+            data: updatedPackage,
+          }));
         }
+      });
+    } catch (error) {
+      console.error("Error updating package status:", error);
+      res.status(500).json({ message: "Failed to update package status" });
+    }
+  });
+
+  // Public tracking routes (no authentication required)
+  app.get("/api/track/:trackingId", async (req, res) => {
+    try {
+      const trackingId = req.params.trackingId.toUpperCase();
+      const packageData = await storage.getPackageByTrackingId(trackingId);
+      
+      if (!packageData) {
+        return res.status(404).json({ message: "Package not found" });
       }
 
-      // Broadcast transaction to WebSocket clients
-      broadcastToClients('transaction', { transaction, userId });
-
-      res.json(transaction);
+      const trackingEvents = await storage.getTrackingEventsByPackageId(packageData.id);
+      
+      // Return limited information for public tracking
+      res.json({
+        trackingId: packageData.trackingId,
+        currentStatus: packageData.currentStatus,
+        currentLocation: packageData.currentLocation,
+        estimatedDelivery: packageData.estimatedDelivery,
+        actualDelivery: packageData.actualDelivery,
+        recipientName: packageData.recipientName,
+        recipientAddress: packageData.recipientAddress,
+        packageDescription: packageData.packageDescription,
+        trackingEvents: trackingEvents.map(event => ({
+          status: event.status,
+          location: event.location,
+          description: event.description,
+          timestamp: event.timestamp,
+        })),
+      });
     } catch (error) {
-      console.error("Error simulating transaction:", error);
-      res.status(500).json({ message: "Failed to simulate transaction" });
+      console.error("Error tracking package:", error);
+      res.status(500).json({ message: "Failed to track package" });
     }
   });
 
-  app.post('/api/admin/simulate-market', isAuthenticated, async (req: any, res) => {
+  // Tracking events routes
+  app.get("/api/packages/:id/events", isAuthenticated, async (req: any, res) => {
     try {
-      const { action } = req.body; // 'bull' or 'bear'
-      const multiplier = action === 'bull' ? 1.1 : 0.9;
-      
-      const cryptos = await storage.getCryptocurrencies();
-      
-      for (const crypto of cryptos) {
-        const newPrice = parseFloat(crypto.currentPrice || '0') * multiplier;
-        const priceChange = newPrice - parseFloat(crypto.currentPrice || '0');
-        const priceChangePercentage = (priceChange / parseFloat(crypto.currentPrice || '1')) * 100;
-        
-        await storage.upsertCryptocurrency({
-          ...crypto,
-          currentPrice: newPrice.toString(),
-          priceChange24h: priceChange.toString(),
-          priceChangePercentage24h: priceChangePercentage.toString(),
-        });
+      const packageId = parseInt(req.params.id);
+      const events = await storage.getTrackingEventsByPackageId(packageId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching tracking events:", error);
+      res.status(500).json({ message: "Failed to fetch tracking events" });
+    }
+  });
+
+  app.post("/api/packages/:id/events", isAuthenticated, async (req: any, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const eventData = insertTrackingEventSchema.parse({
+        ...req.body,
+        packageId,
+      });
+
+      const newEvent = await storage.addTrackingEvent(eventData);
+      res.json(newEvent);
+
+      // Broadcast update to WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: "trackingUpdate",
+            data: { packageId, event: newEvent },
+          }));
+        }
+      });
+    } catch (error) {
+      console.error("Error adding tracking event:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid event data", errors: error.errors });
       }
-
-      // Broadcast market update to WebSocket clients
-      broadcastToClients('marketUpdate', { action, multiplier });
-
-      res.json({ message: `${action} market simulation applied` });
-    } catch (error) {
-      console.error("Error simulating market:", error);
-      res.status(500).json({ message: "Failed to simulate market" });
+      res.status(500).json({ message: "Failed to add tracking event" });
     }
   });
 
-  // NFT routes
-  app.get('/api/nft-collections', async (req, res) => {
+  // Admin routes for package management
+  app.get("/api/admin/packages", isAuthenticated, async (req: any, res) => {
     try {
-      const collections = await storage.getTopNFTCollections();
-      res.json(collections);
+      const packages = await storage.getAllPackages();
+      res.json(packages);
     } catch (error) {
-      console.error("Error fetching NFT collections:", error);
-      res.status(500).json({ message: "Failed to fetch NFT collections" });
+      console.error("Error fetching admin packages:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
     }
   });
 
+  // Create HTTP server
   const httpServer = createServer(app);
 
-  // WebSocket setup for real-time updates
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  const clients = new Set<WebSocket>();
-
-  wss.on('connection', (ws: WebSocket) => {
-    clients.add(ws);
-    console.log('New WebSocket client connected');
-
-    ws.on('close', () => {
-      clients.delete(ws);
-      console.log('WebSocket client disconnected');
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      clients.delete(ws);
-    });
+  // Setup WebSocket server for real-time updates
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: "/ws" 
   });
 
-  function broadcastToClients(type: string, data: any) {
-    const message = JSON.stringify({ type, data });
-    clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
+  wss.on("connection", (ws) => {
+    console.log("New WebSocket connection established");
+
+    ws.on("message", (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log("Received WebSocket message:", data);
+        
+        // Handle different message types here if needed
+        if (data.type === "subscribe") {
+          // Client subscribing to tracking updates
+          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
       }
     });
-  }
 
-  // Update cryptocurrency prices every 30 seconds
-  setInterval(async () => {
-    try {
-      const cryptoData = await coinGeckoService.getTopCryptocurrencies(10);
-      
-      for (const crypto of cryptoData) {
-        await storage.upsertCryptocurrency({
-          id: crypto.id,
-          symbol: crypto.symbol,
-          name: crypto.name,
-          currentPrice: crypto.current_price.toString(),
-          priceChange24h: crypto.price_change_24h?.toString() || '0',
-          priceChangePercentage24h: crypto.price_change_percentage_24h?.toString() || '0',
-          marketCap: crypto.market_cap?.toString() || '0',
-          marketCapRank: crypto.market_cap_rank || 0,
-          totalVolume: crypto.total_volume?.toString() || '0',
-        });
-      }
+    ws.on("close", () => {
+      console.log("WebSocket connection closed");
+    });
 
-      broadcastToClients('priceUpdate', cryptoData);
-    } catch (error) {
-      console.error('Error updating cryptocurrency prices:', error);
-    }
-  }, 30000);
-
-  // Update NFT collections every 5 minutes
-  setInterval(async () => {
-    try {
-      const nftData = await coinGeckoService.getTopNFTCollections();
-      
-      for (const nft of nftData) {
-        await storage.upsertNFTCollection({
-          name: nft.name,
-          slug: nft.id,
-          floorPrice: nft.floor_price?.native_currency?.toString() || '0',
-          priceChangePercentage24h: nft.floor_price_in_usd_24h_percentage_change?.toString() || '0',
-          imageUrl: `https://images.unsplash.com/photo-1635322966219-b75ed372eb01?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64`,
-        });
-      }
-
-      broadcastToClients('nftUpdate', nftData);
-    } catch (error) {
-      console.error('Error updating NFT collections:', error);
-    }
-  }, 300000);
+    // Send welcome message
+    ws.send(JSON.stringify({ 
+      type: "connected", 
+      message: "Connected to ShipTrack real-time updates" 
+    }));
+  });
 
   return httpServer;
 }

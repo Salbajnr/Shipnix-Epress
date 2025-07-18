@@ -1,3 +1,6 @@
+/* Font loading */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -59,47 +62,64 @@
   }
 }
 
-/* Custom animations */
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+/* Custom animations for shipping tracking */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-.animate-marquee {
-  animation: marquee 30s linear infinite;
+@keyframes slideIn {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
 }
 
-.price-ticker {
-  animation: marquee 30s linear infinite;
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
 }
 
-/* Font loading */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
 
-/* Font Awesome icons */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+/* Status indicator animations */
+.pulse-blue {
+  animation: pulseBlue 2s ease-in-out infinite;
+}
 
-/* Pulse animations */
 .pulse-green {
   animation: pulseGreen 2s ease-in-out infinite;
 }
 
-.pulse-red {
-  animation: pulseRed 2s ease-in-out infinite;
+.pulse-yellow {
+  animation: pulseYellow 2s ease-in-out infinite;
+}
+
+@keyframes pulseBlue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
 }
 
 @keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
 }
 
-@keyframes pulseRed {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+@keyframes pulseYellow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
 }
 
-/* Chart container */
-.chart-container {
+/* Tracking timeline styles */
+.tracking-timeline {
   position: relative;
-  height: 300px;
+}
+
+.tracking-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 24px;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--border));
 }
