@@ -12,44 +12,57 @@ export function useWebSocket() {
   const messageHandlers = useRef<Map<string, (data: any) => void>>(new Map());
 
   useEffect(() => {
+    // Only attempt WebSocket connection in production or if explicitly enabled
+    const shouldConnect = process.env.NODE_ENV === 'production' || process.env.VITE_ENABLE_WEBSOCKET === 'true';
+    
+    if (!shouldConnect) {
+      console.log('WebSocket disabled in development mode');
+      return;
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    try {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      setIsConnected(true);
-      console.log('WebSocket connected');
-    };
+      ws.onopen = () => {
+        setIsConnected(true);
+        console.log('WebSocket connected');
+      };
 
-    ws.onclose = () => {
-      setIsConnected(false);
-      console.log('WebSocket disconnected');
-    };
+      ws.onclose = () => {
+        setIsConnected(false);
+        console.log('WebSocket disconnected');
+      };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
-    };
+      ws.onerror = (error) => {
+        console.warn('WebSocket connection failed:', error);
+        setIsConnected(false);
+      };
 
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        setLastMessage(message);
-        
-        const handler = messageHandlers.current.get(message.type);
-        if (handler) {
-          handler(message.data);
+      ws.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data);
+          setLastMessage(message);
+          
+          const handler = messageHandlers.current.get(message.type);
+          if (handler) {
+            handler(message.data);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
         }
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
+      };
 
-    return () => {
-      ws.close();
-    };
+      return () => {
+        ws.close();
+      };
+    } catch (error) {
+      console.warn('Failed to create WebSocket connection:', error);
+      setIsConnected(false);
+    }
   }, []);
 
   const subscribe = (messageType: string, handler: (data: any) => void) => {

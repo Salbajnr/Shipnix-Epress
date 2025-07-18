@@ -174,7 +174,7 @@ export default function Landing() {
               <a href="#solutions" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Solutions</a>
               <a href="#about" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">About</a>
               <a href="#contact" className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Contact</a>
-              <Button variant="outline" className="border-2 hover:scale-105 transition-transform">
+              <Button variant="outline" className="border-2 hover:scale-105 transition-transform" asChild>
                 <a href="/api/login">Admin Portal</a>
               </Button>
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all hover:scale-105">

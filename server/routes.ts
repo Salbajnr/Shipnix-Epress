@@ -7,6 +7,44 @@ import { insertPackageSchema, insertTrackingEventSchema, insertQuoteSchema, inse
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create HTTP server first
+  const httpServer = createServer(app);
+  
+  // Setup WebSocket server for real-time updates
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: "/ws" 
+  });
+
+  wss.on("connection", (ws) => {
+    console.log("New WebSocket connection established");
+
+    ws.on("message", (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log("Received WebSocket message:", data);
+        
+        // Handle different message types here if needed
+        if (data.type === "subscribe") {
+          // Client subscribing to tracking updates
+          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+      }
+    });
+
+    ws.on("close", () => {
+      console.log("WebSocket connection closed");
+    });
+
+    // Send welcome message
+    ws.send(JSON.stringify({ 
+      type: "connected", 
+      message: "Connected to ShipTrack real-time updates" 
+    }));
+  });
+  
   // Auth middleware
   await setupAuth(app);
 
@@ -345,44 +383,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
     }
-  });
-
-  // Create HTTP server
-  const httpServer = createServer(app);
-
-  // Setup WebSocket server for real-time updates
-  const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: "/ws" 
-  });
-
-  wss.on("connection", (ws) => {
-    console.log("New WebSocket connection established");
-
-    ws.on("message", (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        console.log("Received WebSocket message:", data);
-        
-        // Handle different message types here if needed
-        if (data.type === "subscribe") {
-          // Client subscribing to tracking updates
-          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
-        }
-      } catch (error) {
-        console.error("Error handling WebSocket message:", error);
-      }
-    });
-
-    ws.on("close", () => {
-      console.log("WebSocket connection closed");
-    });
-
-    // Send welcome message
-    ws.send(JSON.stringify({ 
-      type: "connected", 
-      message: "Connected to ShipTrack real-time updates" 
-    }));
   });
 
   return httpServer;
