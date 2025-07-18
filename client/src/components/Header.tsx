@@ -34,9 +34,10 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigationItems = [
-    { name: "Track Package", href: "/track", icon: Search },
-    { name: "Calculate Cost", href: "/calculate", icon: Calculator },
-    { name: "Get Quote", href: "/quote", icon: FileText },
+    { name: "Trading", href: "/", icon: Search },
+    { name: "Features", href: "/features", icon: Settings },
+    { name: "Portfolio", href: "/portfolio", icon: Calculator },
+    { name: "Analytics", href: "/analytics", icon: FileText },
     { name: "Support", href: "/support", icon: MessageSquare },
   ];
 
@@ -48,7 +49,7 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <Logo className="h-8 w-8" />
-              <span className="text-xl font-bold gradient-text">Shipnix-Express</span>
+              <span className="text-xl font-bold gradient-text">CryptoTrader Pro</span>
             </Link>
           </div>
 
