@@ -13,6 +13,7 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import CustomerDashboard from "@/pages/customer-dashboard";
 import FAQPage from "@/pages/faq";
+import Features from "@/pages/features";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/faq" component={FAQPage} />
       <Route path="/support" component={FAQPage} />
+      <Route path="/features" component={Features} />
       
       {/* Protected Admin Routes */}
       {isLoading || !isAuthenticated ? (

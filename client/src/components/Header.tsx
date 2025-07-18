@@ -35,7 +35,7 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
 
   const navigationItems = [
     { name: "Track Package", href: "/track", icon: Search },
-    { name: "Calculate Cost", href: "/calculate", icon: Calculator },
+    { name: "Features", href: "/features", icon: Settings },
     { name: "Get Quote", href: "/quote", icon: FileText },
     { name: "Support", href: "/support", icon: MessageSquare },
   ];
