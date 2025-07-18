@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import shipnixLogo from "@/assets/shipnix-logo.png";
 import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
 import type { Package as PackageType } from "@shared/schema";
 
@@ -153,7 +154,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <img 
-                src="/attached_assets/Shipnix logo_1752803535936.png" 
+                src={shipnixLogo} 
                 alt="Shipnix-Express" 
                 className="h-10 w-auto"
               />
