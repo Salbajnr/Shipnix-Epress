@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Truck, MapPin, Clock, Bell, CreditCard, User, Settings, BarChart3, AlertCircle, CheckCircle, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import shipnixLogo from "@/assets/shipnix-logo.png";
+import CreatePackageForm from "@/components/CreatePackageForm";
+// Using an SVG logo inline to avoid asset loading issues  
+const shipnixLogo = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzI1NjNFQiIvPgo8cGF0aCBkPSJNMTIgMTJIMjhWMTZIMTJWMTJaTTEyIDIwSDI0VjI0SDEyVjIwWk0xMiAyOEgyOFYzMkgxMlYyOFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=";
 import type { Package as PackageType, Notification, SupportTicket } from "@shared/schema";
 import { PACKAGE_STATUSES, NOTIFICATION_TYPES } from "@shared/schema";
 
@@ -213,10 +215,14 @@ export default function Dashboard() {
                     <Package className="h-5 w-5" />
                     Recent Shipments
                   </CardTitle>
-                  <Button variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Shipment
-                  </Button>
+                  <CreatePackageForm 
+                    triggerButton={
+                      <Button variant="outline" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Shipment
+                      </Button>
+                    }
+                  />
                 </div>
               </CardHeader>
               <CardContent>
@@ -229,7 +235,11 @@ export default function Dashboard() {
                     <p className="text-gray-600 dark:text-gray-300 mb-4">
                       Start shipping with Shipnix-Express today
                     </p>
-                    <Button>Create Your First Shipment</Button>
+                    <CreatePackageForm 
+                      triggerButton={
+                        <Button>Create Your First Shipment</Button>
+                      }
+                    />
                   </div>
                 ) : (
                   <div className="space-y-4">

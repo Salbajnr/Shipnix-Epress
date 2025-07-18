@@ -10,6 +10,8 @@ import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Admin from "@/pages/admin";
 import Profile from "@/pages/profile";
+import CookieConsent from "@/components/CookieConsent";
+import LiveChatWidget from "@/components/LiveChatWidget";
 
 function Router() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -38,6 +40,8 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <CookieConsent />
+        <LiveChatWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );
