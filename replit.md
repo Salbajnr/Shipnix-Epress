@@ -68,10 +68,13 @@ The application uses PostgreSQL with the following main tables:
    - Successful auth → Creates/updates user in database
    - Session stored in PostgreSQL → User authenticated
 
-2. **Package Creation Flow**:
-   - Admin creates package → Unique tracking ID generated
-   - Package data stored → Initial tracking event created
-   - WebSocket broadcasts package creation to connected clients
+2. **Quote → Invoice → Payment → Tracking Workflow**:
+   - Customer submits quote request → Quote created with pricing
+   - Admin reviews and approves quote → Status updated to "approved"
+   - Admin converts approved quote to invoice → Invoice generated and emailed
+   - Customer pays invoice → Admin marks as paid
+   - Payment verified → Package created with tracking ID and QR code
+   - Automated notifications sent at each step
 
 3. **Package Tracking Flow**:
    - Public tracking endpoint → Package lookup by tracking ID
@@ -82,6 +85,7 @@ The application uses PostgreSQL with the following main tables:
    - Admin updates package status → Database updates
    - New tracking event automatically created
    - WebSocket broadcasts status change to all connected clients
+   - Automated SMS/Email notifications sent to customer
    - Real-time updates reflect immediately in all interfaces
 
 ## External Dependencies
@@ -145,5 +149,10 @@ The application uses PostgreSQL with the following main tables:
 - ✅ Built automated SMS/Email notification system
 - ✅ Integrated real-time chat API for admin-user communication
 - ✅ Added notification service with status update automation
+- ✅ Implemented proper quote → invoice → payment → tracking workflow
+- ✅ Created customer quote request system with instant pricing
+- ✅ Built admin quote management with approval and conversion features
+- ✅ Added invoice generation from approved quotes with automated notifications
+- ✅ Structured package creation to require payment verification before tracking ID generation
 
 The application follows a modern full-stack architecture with emphasis on real-time functionality, user experience, and maintainable code structure optimized for global shipping and logistics operations.

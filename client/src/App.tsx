@@ -13,6 +13,8 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import CustomerDashboard from "@/pages/customer-dashboard";
 import FAQPage from "@/pages/faq";
+import QuoteRequest from "@/pages/quote-request";
+import QuoteManagement from "@/pages/quote-management";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +29,7 @@ function Router() {
       <Route path="/customer-dashboard" component={CustomerDashboard} />
       <Route path="/faq" component={FAQPage} />
       <Route path="/support" component={FAQPage} />
+      <Route path="/quote" component={QuoteRequest} />
       
       {/* Protected Admin Routes */}
       {isLoading || !isAuthenticated ? (
@@ -34,6 +37,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/quotes" component={QuoteManagement} />
         </>
       )}
       <Route component={NotFound} />

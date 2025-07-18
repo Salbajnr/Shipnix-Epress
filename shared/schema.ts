@@ -65,7 +65,7 @@ export const packages = pgTable("packages", {
   deliveryPriceAdjustment: decimal("delivery_price_adjustment", { precision: 10, scale: 2 }).default("0"),
   qrCode: text("qr_code"), // Base64 encoded QR code
   qrCodeUrl: varchar("qr_code_url", { length: 500 }), // URL to QR code image
-  currentStatus: varchar("current_status", { length: 50 }).notNull().default("created"),
+  currentStatus: varchar("current_status", { length: 50 }).notNull().default("pending_payment"), // pending_payment, created, processing, etc.
   currentLocation: text("current_location"),
   deliveryInstructions: text("delivery_instructions"),
   signatureRequired: boolean("signature_required").default(false),
@@ -88,17 +88,23 @@ export const trackingEvents = pgTable("tracking_events", {
 export const quotes = pgTable("quotes", {
   id: serial("id").primaryKey(),
   quoteNumber: varchar("quote_number", { length: 20 }).unique().notNull(),
-  customerName: varchar("customer_name", { length: 100 }).notNull(),
-  customerEmail: varchar("customer_email", { length: 100 }).notNull(),
-  customerPhone: varchar("customer_phone", { length: 20 }),
+  senderName: varchar("sender_name", { length: 100 }).notNull(),
+  senderEmail: varchar("sender_email", { length: 100 }),
+  senderPhone: varchar("sender_phone", { length: 20 }),
   senderAddress: text("sender_address").notNull(),
+  recipientName: varchar("recipient_name", { length: 100 }).notNull(),
+  recipientEmail: varchar("recipient_email", { length: 100 }),
+  recipientPhone: varchar("recipient_phone", { length: 20 }),
   recipientAddress: text("recipient_address").notNull(),
   packageDescription: text("package_description"),
   weight: decimal("weight", { precision: 10, scale: 2 }),
   dimensions: text("dimensions"),
-  estimatedCost: decimal("estimated_cost", { precision: 10, scale: 2 }).notNull(),
+  deliveryTimeSlot: varchar("delivery_time_slot", { length: 20 }),
+  baseCost: decimal("base_cost", { precision: 10, scale: 2 }).notNull(),
+  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).default("0"),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
   validUntil: timestamp("valid_until").notNull(),
-  status: varchar("status", { length: 20 }).default("pending"), // pending, accepted, expired, converted
+  status: varchar("status", { length: 20 }).default("pending"), // pending, approved, expired, converted_to_invoice
   notes: text("notes"),
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -281,6 +287,7 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
 // Package status constants
 export const PACKAGE_STATUSES = {
+  PENDING_PAYMENT: "pending_payment", // Waiting for invoice payment
   CREATED: "created",
   PICKED_UP: "picked_up",
   IN_TRANSIT: "in_transit",
@@ -288,6 +295,14 @@ export const PACKAGE_STATUSES = {
   DELIVERED: "delivered",
   FAILED_DELIVERY: "failed_delivery",
   RETURNED: "returned",
+} as const;
+
+// Quote status constants
+export const QUOTE_STATUSES = {
+  PENDING: "pending",
+  APPROVED: "approved", 
+  EXPIRED: "expired",
+  CONVERTED_TO_INVOICE: "converted_to_invoice",
 } as const;
 
 // Payment method constants
@@ -332,3 +347,4 @@ export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS]
 export type PaymentStatus = typeof PAYMENT_STATUSES[keyof typeof PAYMENT_STATUSES];
 export type DeliveryTimeSlot = typeof DELIVERY_TIME_SLOTS[keyof typeof DELIVERY_TIME_SLOTS];
 export type ChatSenderType = typeof CHAT_SENDER_TYPES[keyof typeof CHAT_SENDER_TYPES];
+export type QuoteStatus = typeof QUOTE_STATUSES[keyof typeof QUOTE_STATUSES];
