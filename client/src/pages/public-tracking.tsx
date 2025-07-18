@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Truck, MapPin, Clock, Shield, Star, CheckCircle, Phone, Mail, MessageCircle } from "lucide-react";
+import { Search, Package, Truck, MapPin, Clock, Shield, Star, CheckCircle, Phone, Mail, MessageCircle, QrCode } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import TrackingTimeline from "@/components/TrackingTimeline";
 import LiveChat from "@/components/LiveChat";
@@ -150,18 +150,31 @@ export default function PublicTracking() {
             <p className="text-gray-600 dark:text-gray-400">Format: ST-XXXXXXXXX</p>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <Input
-                placeholder="ST-000123456"
-                value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value.toUpperCase())}
-                onKeyPress={handleKeyPress}
-                className="text-lg font-mono"
-              />
-              <Button onClick={handleTrack} className="px-8" disabled={isLoading}>
-                <Search className="h-4 w-4 mr-2" />
-                {isLoading ? "Searching..." : "Track"}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <Input
+                  placeholder="ST-000123456"
+                  value={trackingId}
+                  onChange={(e) => setTrackingId(e.target.value.toUpperCase())}
+                  onKeyPress={handleKeyPress}
+                  className="text-lg font-mono"
+                />
+                <Button onClick={handleTrack} className="px-8" disabled={isLoading}>
+                  <Search className="h-4 w-4 mr-2" />
+                  {isLoading ? "Searching..." : "Track"}
+                </Button>
+              </div>
+              
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => alert("QR Code scanning feature coming soon! For now, please enter your tracking ID manually.")}
+                  className="flex items-center gap-2"
+                >
+                  <QrCode className="h-4 w-4" />
+                  Scan QR Code
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

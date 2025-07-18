@@ -3,7 +3,17 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertPackageSchema, insertTrackingEventSchema, insertQuoteSchema, insertInvoiceSchema, insertNotificationSchema, PACKAGE_STATUSES } from "@shared/schema";
+import { notificationService } from "./services/notificationService";
+import { 
+  insertPackageSchema, 
+  insertTrackingEventSchema, 
+  insertQuoteSchema, 
+  insertInvoiceSchema, 
+  insertNotificationSchema, 
+  insertChatMessageSchema,
+  PACKAGE_STATUSES,
+  DELIVERY_TIME_SLOTS 
+} from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -32,6 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const newPackage = await storage.createPackage(packageData);
+      
+      // Send initial notifications for package creation
+      await notificationService.sendPackageStatusUpdate(newPackage, PACKAGE_STATUSES.CREATED);
+      
       res.json(newPackage);
     } catch (error) {
       console.error("Error creating package:", error);
@@ -127,6 +141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedPackage = await storage.updatePackageStatus(id, status, location);
       res.json(updatedPackage);
 
+      // Send automated notifications for status changes
+      await notificationService.sendPackageStatusUpdate(updatedPackage, status);
+
       // Broadcast update to WebSocket clients
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
@@ -214,6 +231,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin packages:", error);
       res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  // Chat API routes
+  app.post("/api/chat/message", async (req, res) => {
+    try {
+      const messageData = insertChatMessageSchema.parse(req.body);
+      const newMessage = await storage.createChatMessage(messageData);
+      
+      res.json(newMessage);
+
+      // Broadcast chat message to WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({
+            type: "chatMessage",
+            data: newMessage,
+          }));
+        }
+      });
+    } catch (error) {
+      console.error("Error creating chat message:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid message data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.get("/api/chat/session/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const messages = await storage.getChatMessagesBySessionId(sessionId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      res.status(500).json({ message: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat/mark-read", async (req, res) => {
+    try {
+      const { sessionId, senderType } = req.body;
+      await storage.markChatMessagesAsRead(sessionId, senderType);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ message: "Failed to mark messages as read" });
+    }
+  });
+
+  // Delivery scheduling and pricing API
+  app.get("/api/delivery/pricing", async (req, res) => {
+    try {
+      const timeSlots = Object.entries(DELIVERY_TIME_SLOTS).map(([key, value]) => {
+        let price = 0;
+        let description = "";
+        switch (value) {
+          case 'morning':
+            price = 0;
+            description = "8AM - 12PM (Standard)";
+            break;
+          case 'afternoon':
+            price = 5;
+            description = "12PM - 5PM (+$5)";
+            break;
+          case 'evening':
+            price = 15;
+            description = "5PM - 8PM (+$15)";
+            break;
+          case 'express':
+            price = 25;
+            description = "Same Day Express (+$25)";
+            break;
+          case 'weekend':
+            price = 20;
+            description = "Weekend Delivery (+$20)";
+            break;
+        }
+        return {
+          slot: value,
+          name: key.toLowerCase().replace('_', ' '),
+          price,
+          description
+        };
+      });
+      
+      res.json(timeSlots);
+    } catch (error) {
+      console.error("Error fetching delivery pricing:", error);
+      res.status(500).json({ message: "Failed to fetch delivery pricing" });
+    }
+  });
+
+  // Notification management API
+  app.post("/api/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const notificationData = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(notificationData);
+      res.json(notification);
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid notification data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.get("/api/packages/:id/notifications", isAuthenticated, async (req: any, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const notifications = await storage.getNotificationsByPackageId(packageId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 

@@ -11,7 +11,7 @@ import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users, FileText, Cre
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import Logo from "@/components/Logo";
-import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
+import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES, DELIVERY_TIME_SLOTS } from "@shared/schema";
 import type { Package as PackageType, Quote, Invoice } from "@shared/schema";
 import PaymentMethods from "@/components/PaymentMethods";
 import TrackingTimeline from "@/components/TrackingTimeline";
@@ -32,6 +32,17 @@ interface PackageFormData {
   shippingCost: string;
   paymentMethod: string;
   estimatedDelivery: string;
+  scheduledDeliveryDate: string;
+  scheduledTimeSlot: string;
+  deliveryInstructions: string;
+  signatureRequired: boolean;
+}
+
+interface DeliverySlot {
+  slot: string;
+  name: string;
+  price: number;
+  description: string;
 }
 
 export default function Home() {
@@ -55,10 +66,18 @@ export default function Home() {
     shippingCost: "",
     paymentMethod: "card",
     estimatedDelivery: "",
+    scheduledDeliveryDate: "",
+    scheduledTimeSlot: "morning",
+    deliveryInstructions: "",
+    signatureRequired: false,
   });
 
   const { data: packages = [], isLoading } = useQuery<PackageType[]>({
     queryKey: ["/api/packages"],
+  });
+
+  const { data: deliverySlots = [] } = useQuery<DeliverySlot[]>({
+    queryKey: ["/api/delivery/pricing"],
   });
 
   const createPackageMutation = useMutation({
@@ -68,16 +87,22 @@ export default function Home() {
         weight: data.weight ? parseFloat(data.weight) : null,
         shippingCost: data.shippingCost ? parseFloat(data.shippingCost) : null,
         estimatedDelivery: data.estimatedDelivery ? new Date(data.estimatedDelivery).toISOString() : null,
+        scheduledDeliveryDate: data.scheduledDeliveryDate ? new Date(data.scheduledDeliveryDate).toISOString() : null,
       };
       return await apiRequest("/api/packages", {
         method: "POST",
         body: JSON.stringify(payload),
       });
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
       setShowCreateForm(false);
       resetForm();
+      
+      // Show success message with tracking ID and QR code
+      if (response?.trackingId) {
+        alert(`Package created successfully!\nTracking ID: ${response.trackingId}\nQR Code generated for tracking.`);
+      }
     },
   });
 
@@ -110,10 +135,14 @@ export default function Home() {
       shippingCost: "",
       paymentMethod: "card",
       estimatedDelivery: "",
+      scheduledDeliveryDate: "",
+      scheduledTimeSlot: "morning",
+      deliveryInstructions: "",
+      signatureRequired: false,
     });
   };
 
-  const handleInputChange = (field: keyof PackageFormData, value: string) => {
+  const handleInputChange = (field: keyof PackageFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -481,6 +510,70 @@ export default function Home() {
                       onChange={(e) => handleInputChange("estimatedDelivery", e.target.value)}
                     />
                   </div>
+
+                  {/* Delivery Scheduling Section */}
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="text-lg font-semibold flex items-center">
+                      <Clock className="h-5 w-5 mr-2" />
+                      Delivery Scheduling
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="scheduledDeliveryDate">Scheduled Delivery Date</Label>
+                        <Input
+                          id="scheduledDeliveryDate"
+                          type="date"
+                          value={formData.scheduledDeliveryDate}
+                          onChange={(e) => handleInputChange("scheduledDeliveryDate", e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="scheduledTimeSlot">Delivery Time Slot</Label>
+                        <Select value={formData.scheduledTimeSlot} onValueChange={(value) => handleInputChange("scheduledTimeSlot", value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deliverySlots.map((slot) => (
+                              <SelectItem key={slot.slot} value={slot.slot}>
+                                {slot.description}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formData.scheduledTimeSlot && deliverySlots.find(s => s.slot === formData.scheduledTimeSlot)?.price > 0 && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                            +${deliverySlots.find(s => s.slot === formData.scheduledTimeSlot)?.price} delivery fee
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="deliveryInstructions">Special Delivery Instructions</Label>
+                      <Textarea
+                        id="deliveryInstructions"
+                        value={formData.deliveryInstructions}
+                        onChange={(e) => handleInputChange("deliveryInstructions", e.target.value)}
+                        placeholder="Leave package at door, ring doorbell, etc."
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="signatureRequired"
+                        checked={formData.signatureRequired}
+                        onChange={(e) => handleInputChange("signatureRequired", e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="signatureRequired">Signature Required on Delivery (+$5)</Label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -527,7 +620,7 @@ export default function Home() {
                             {formatStatus(pkg.currentStatus)}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600 dark:text-gray-300">
                           <div>
                             <span className="font-medium">From:</span> {pkg.senderName}
                           </div>
@@ -546,6 +639,21 @@ export default function Home() {
                           <div>
                             <span className="font-medium">Created:</span> {new Date(pkg.createdAt).toLocaleDateString()}
                           </div>
+                          {pkg.scheduledDeliveryDate && (
+                            <div>
+                              <span className="font-medium">Scheduled:</span> {new Date(pkg.scheduledDeliveryDate).toLocaleDateString()}
+                            </div>
+                          )}
+                          {pkg.scheduledTimeSlot && (
+                            <div>
+                              <span className="font-medium">Time Slot:</span> {pkg.scheduledTimeSlot}
+                            </div>
+                          )}
+                          {pkg.deliveryPriceAdjustment > 0 && (
+                            <div>
+                              <span className="font-medium">Delivery Fee:</span> +${pkg.deliveryPriceAdjustment}
+                            </div>
+                          )}
                         </div>
                         {pkg.currentLocation && (
                           <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-300">
@@ -555,6 +663,31 @@ export default function Home() {
                         )}
                       </div>
                       <div className="flex space-x-2 mt-4 sm:mt-0">
+                        {pkg.qrCode && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const newWindow = window.open();
+                              if (newWindow) {
+                                newWindow.document.write(`
+                                  <html>
+                                    <head><title>QR Code - ${pkg.trackingId}</title></head>
+                                    <body style="text-align: center; padding: 20px;">
+                                      <h2>Tracking QR Code</h2>
+                                      <p><strong>${pkg.trackingId}</strong></p>
+                                      <img src="${pkg.qrCode}" alt="QR Code" style="max-width: 300px;" />
+                                      <p><small>Scan to track package</small></p>
+                                    </body>
+                                  </html>
+                                `);
+                              }
+                            }}
+                          >
+                            <QrCode className="h-3 w-3 mr-1" />
+                            QR Code
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
