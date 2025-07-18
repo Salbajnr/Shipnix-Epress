@@ -5,16 +5,11 @@ interface WebSocketMessage {
   data: any;
 }
 
-interface UseWebSocketOptions {
-  onMessage?: (data: any) => void;
-}
-
-export function useWebSocket(options?: UseWebSocketOptions) {
+export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const messageHandlers = useRef<Map<string, (data: any) => void>>(new Map());
-  const { onMessage } = options || {};
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -42,11 +37,6 @@ export function useWebSocket(options?: UseWebSocketOptions) {
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
         setLastMessage(message);
-        
-        // Call the onMessage callback if provided
-        if (onMessage) {
-          onMessage(message);
-        }
         
         const handler = messageHandlers.current.get(message.type);
         if (handler) {
