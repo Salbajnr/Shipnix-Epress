@@ -53,6 +53,11 @@ export const packages = pgTable("packages", {
   packageDescription: text("package_description"),
   weight: decimal("weight", { precision: 10, scale: 2 }), // in kg
   dimensions: text("dimensions"), // LxWxH format
+  shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }),
+  paymentMethod: varchar("payment_method", { length: 20 }).default("cash"),
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"),
+  cryptoPaymentAddress: varchar("crypto_payment_address", { length: 100 }),
+  cryptoTxHash: varchar("crypto_tx_hash", { length: 100 }),
   estimatedDelivery: timestamp("estimated_delivery"),
   actualDelivery: timestamp("actual_delivery"),
   currentStatus: varchar("current_status", { length: 50 }).notNull().default("created"),
@@ -132,4 +137,25 @@ export const PACKAGE_STATUSES = {
   RETURNED: "returned",
 } as const;
 
+// Payment method constants
+export const PAYMENT_METHODS = {
+  CASH: "cash",
+  CARD: "card",
+  BANK_TRANSFER: "bank_transfer",
+  BITCOIN: "bitcoin",
+  ETHEREUM: "ethereum",
+  USDC: "usdc",
+  PAYPAL: "paypal",
+} as const;
+
+// Payment status constants
+export const PAYMENT_STATUSES = {
+  PENDING: "pending",
+  PAID: "paid",
+  FAILED: "failed",
+  REFUNDED: "refunded",
+} as const;
+
 export type PackageStatus = typeof PACKAGE_STATUSES[keyof typeof PACKAGE_STATUSES];
+export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
+export type PaymentStatus = typeof PAYMENT_STATUSES[keyof typeof PAYMENT_STATUSES];
