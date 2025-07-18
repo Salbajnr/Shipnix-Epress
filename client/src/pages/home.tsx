@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import shipnixLogo from "@/assets/shipnix-logo.png";
+// Using an SVG logo inline to avoid asset loading issues
+const shipnixLogo = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iIzI1NjNFQiIvPgo8cGF0aCBkPSJNMTIgMTJIMjhWMTZIMTJWMTJaTTEyIDIwSDI0VjI0SDEyVjIwWk0xMiAyOEgyOFYzMkgxMlYyOFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=";
 import { PACKAGE_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES } from "@shared/schema";
 import type { Package as PackageType } from "@shared/schema";
 
