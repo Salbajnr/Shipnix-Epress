@@ -152,9 +152,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <img 
+                src="/attached_assets/Shipnix logo_1752803535936.png" 
+                alt="Shipnix-Express" 
+                className="h-10 w-auto"
+              />
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Shipnix-Express Admin</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Global Logistics Management Dashboard</p>
               </div>
             </div>
