@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Home from "@/pages/home";
+import AdminDashboard from "@/pages/admin-dashboard";
 import PublicTracking from "@/pages/public-tracking";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -39,7 +39,7 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={Home} />
+          <Route path="/" component={AdminDashboard} />
           <Route path="/quotes" component={QuoteManagement} />
           <Route path="/quotes/:id/edit" component={QuoteEdit} />
           <Route path="/invoices" component={InvoiceManagement} />

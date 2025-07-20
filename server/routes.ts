@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/packages", isAuthenticated, async (req: any, res) => {
+  app.get("/api/packages", async (req: any, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const packages = await storage.getAllPackages(limit);

@@ -171,9 +171,11 @@ export default function Landing() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                  Start Shipping Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105" asChild>
+                  <a href="/api/login">
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Admin Login
+                  </a>
                 </Button>
                 <Button size="lg" variant="outline" className="border-2 px-8 py-4 text-lg hover:scale-105 transition-transform">
                   Watch Demo
