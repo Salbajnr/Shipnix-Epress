@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/packages", isAuthenticated, async (req: any, res) => {
+  app.get("/api/packages", async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
