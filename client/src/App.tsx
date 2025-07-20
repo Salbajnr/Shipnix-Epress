@@ -15,6 +15,9 @@ import CustomerDashboard from "@/pages/customer-dashboard";
 import FAQPage from "@/pages/faq";
 import QuoteRequest from "@/pages/quote-request";
 import QuoteManagement from "@/pages/quote-management";
+import QuoteEdit from "@/pages/quote-edit";
+import InvoiceManagement from "@/pages/invoice-management";
+import PackageManagement from "@/pages/package-management";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -38,6 +41,9 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/quotes" component={QuoteManagement} />
+          <Route path="/quotes/:id/edit" component={QuoteEdit} />
+          <Route path="/invoices" component={InvoiceManagement} />
+          <Route path="/packages" component={PackageManagement} />
         </>
       )}
       <Route component={NotFound} />

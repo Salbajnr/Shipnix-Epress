@@ -412,6 +412,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/quotes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const quote = await storage.getQuoteById(id);
+      
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      
+      res.json(quote);
+    } catch (error) {
+      console.error("Error fetching quote:", error);
+      res.status(500).json({ message: "Failed to fetch quote" });
+    }
+  });
+
+  app.patch("/api/quotes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+
+      const updatedQuote = await storage.updateQuote(id, updateData);
+      
+      if (!updatedQuote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      
+      res.json(updatedQuote);
+    } catch (error) {
+      console.error("Error updating quote:", error);
+      res.status(500).json({ message: "Failed to update quote" });
+    }
+  });
+
   // Convert quote to invoice
   app.post("/api/quotes/:id/convert-to-invoice", isAuthenticated, async (req: any, res) => {
     try {
