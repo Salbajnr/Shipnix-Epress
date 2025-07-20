@@ -46,7 +46,7 @@ interface PackageType {
   currentStatus: string;
   currentLocation: string;
   paymentStatus: string;
-  shippingCost: number;
+  shippingCost: number | string;
   estimatedDelivery: string;
   actualDelivery?: string;
   createdAt: string;
@@ -540,7 +540,7 @@ export default function PackageManagement() {
                         </Badge>
                         <div className="text-right">
                           <div className="text-lg font-bold text-green-600">
-                            ${pkg.shippingCost.toFixed(2)}
+                            ${typeof pkg.shippingCost === 'string' ? parseFloat(pkg.shippingCost || '0').toFixed(2) : (pkg.shippingCost || 0).toFixed(2)}
                           </div>
                         </div>
                       </div>
