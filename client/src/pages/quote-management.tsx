@@ -19,6 +19,7 @@ import {
   MapPin
 } from "lucide-react";
 import Header from "@/components/Header";
+import { Link } from "wouter";
 
 interface Quote {
   id: number;
@@ -292,6 +293,11 @@ export default function QuoteManagement() {
                       <div className="flex items-center gap-3">
                         {quote.status === "pending" && !isExpired && (
                           <>
+                            <Link href={`/quotes/${quote.id}/edit`}>
+                              <Button variant="outline" size="sm">
+                                Edit Quote
+                              </Button>
+                            </Link>
                             <Select onValueChange={(value) => handleStatusChange(quote.id, value)}>
                               <SelectTrigger className="w-40">
                                 <SelectValue placeholder="Change status" />
