@@ -29,77 +29,62 @@ export default function AdminPanel() {
     { id: 'binancecoin', name: 'BNB (BNB)' },
   ];
 
-  const simulateTransactionMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const totalValue = (parseFloat(data.amount) * parseFloat(data.price)).toString();
-      return await apiRequest('POST', '/api/admin/simulate-transaction', {
-        ...data,
-        totalValue,
+  // Real-time package status update mutation
+  const updatePackageStatusMutation = useMutation({
+    mutationFn: async (data: { packageId: number; status: string; location?: string }) => {
+      return await apiRequest('PATCH', `/api/packages/${data.packageId}/status`, {
+        status: data.status,
+        location: data.location,
       });
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Transaction simulated successfully",
+        description: "Package status updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/portfolio"] });
-      setTransactionForm({ type: 'buy', cryptoId: 'bitcoin', amount: '', price: '' });
+      queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to simulate transaction",
+        description: error.message || "Failed to update package status",
         variant: "destructive",
       });
     },
   });
 
-  const simulateMarketMutation = useMutation({
-    mutationFn: async (action: 'bull' | 'bear') => {
-      return await apiRequest('POST', '/api/admin/simulate-market', { action });
-    },
-    onSuccess: (_, action) => {
-      toast({
-        title: "Market Simulation",
-        description: `${action === 'bull' ? 'Bull' : 'Bear'} market simulation applied`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/cryptocurrencies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/portfolio"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to simulate market",
-        variant: "destructive",
-      });
-    },
-  });
+  const createTestPackage = async () => {
+    try {
+      const testPackageData = {
+        senderName: `Test Sender ${Date.now()}`,
+        senderEmail: "test@example.com",
+        senderPhone: "+1-555-123-4567",
+        senderAddress: "123 Test Street, Test City, TC 12345",
+        recipientName: `Test Recipient ${Date.now()}`,
+        recipientEmail: "recipient@example.com", 
+        recipientPhone: "+1-555-987-6543",
+        recipientAddress: "456 Recipient Ave, Recipient City, RC 67890",
+        description: "Test Package - Demo Item",
+        weight: "1.5",
+        dimensions: "20x15x10 cm",
+        shippingCost: "25.99",
+        paymentMethod: "card",
+        scheduledTimeSlot: "morning",
+      };
 
-  const handleTransactionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!transactionForm.amount || !transactionForm.price) {
+      await apiRequest('POST', '/api/packages', testPackageData);
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Success",
+        description: "Test package created successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to create test package",
         variant: "destructive",
       });
-      return;
     }
-    simulateTransactionMutation.mutate(transactionForm);
-  };
-
-  const generateRandomTransaction = () => {
-    const randomCrypto = cryptocurrencyOptions[Math.floor(Math.random() * cryptocurrencyOptions.length)];
-    const randomType = Math.random() > 0.5 ? 'buy' : 'sell';
-    const randomAmount = (Math.random() * 10 + 0.1).toFixed(4);
-    const randomPrice = (Math.random() * 50000 + 1000).toFixed(2);
-
-    simulateTransactionMutation.mutate({
-      type: randomType,
-      cryptoId: randomCrypto.id,
-      amount: randomAmount,
-      price: randomPrice,
-    });
   };
 
   return (
@@ -194,11 +179,10 @@ export default function AdminPanel() {
                 Simulate Bear Market (-10% all assets)
               </Button>
               <Button 
-                onClick={generateRandomTransaction}
+                onClick={createTestPackage}
                 className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                disabled={simulateTransactionMutation.isPending}
               >
-                Add Random Transaction
+                Create Test Package
               </Button>
             </div>
             

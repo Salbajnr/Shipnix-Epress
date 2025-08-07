@@ -105,6 +105,7 @@ export default function PublicTracking() {
     },
     enabled: searchTriggered && trackingId.length > 0,
     retry: false,
+    staleTime: 30000, // Cache for 30 seconds to avoid excessive API calls
   });
 
   const handleTrack = () => {

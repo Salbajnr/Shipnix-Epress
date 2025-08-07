@@ -47,18 +47,16 @@ export default function Landing() {
 
 
 
-  const { data: trackingResult, isLoading, error } = useQuery<TrackingResult>({
-    queryKey: ["/api/track", trackingId],
-    enabled: false, // Disabled for public access
-    retry: false,
-  });
+  // Real tracking functionality - redirects to public tracking page
+  // No query needed here as we redirect to the tracking page
 
   const handleTrack = () => {
     if (trackingId.trim()) {
-      window.location.href = `/track/${trackingId.toUpperCase()}`;
+      // Redirect to public tracking page which uses real API
+      window.location.href = `/public-tracking?track=${trackingId.toUpperCase()}`;
     } else {
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Please enter a valid tracking ID",
         variant: "destructive",
       });
