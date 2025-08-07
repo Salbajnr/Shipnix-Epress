@@ -33,10 +33,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Package management routes
+  // Package management routes (Admin only)
   app.post("/api/packages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Check if user has admin privileges
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
       console.log("Creating package with data:", req.body);
       
       const packageData = insertPackageSchema.parse({
@@ -68,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public tracking endpoint (no authentication required)
+  // Public tracking endpoint (no authentication required - for regular users)
   app.get("/api/public/track/:trackingId", async (req, res) => {
     try {
       const { trackingId } = req.params;
@@ -116,6 +123,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/packages", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user has admin privileges
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const packages = await storage.getAllPackages(limit);
       res.json(packages);
@@ -143,6 +158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/packages/:id/status", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
+      
+      // Check if user has admin privileges
+      const user = await storage.getUser(userId);
+      if (!user || !user.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
       const id = parseInt(req.params.id);
       const { status, location } = req.body;
 
