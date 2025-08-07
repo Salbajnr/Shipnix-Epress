@@ -11,11 +11,33 @@ import {
   insertInvoiceSchema, 
   insertNotificationSchema, 
   insertChatMessageSchema,
+  insertAdminCredentialSchema,
   PACKAGE_STATUSES,
   QUOTE_STATUSES,
   DELIVERY_TIME_SLOTS 
 } from "@shared/schema";
 import { z } from "zod";
+
+// Extend WebSocket and Session interfaces for TypeScript
+declare module 'ws' {
+  interface WebSocket {
+    isAlive?: boolean;
+    subscriptions?: Set<string>;
+  }
+}
+
+declare module 'express-session' {
+  interface SessionData {
+    adminId?: number;
+    adminRole?: string;
+    isAdmin?: boolean;
+  }
+}
+
+declare global {
+  var broadcastPackageUpdate: ((packageData: any, trackingEvent?: any) => void) | undefined;
+  var broadcastAdminNotification: ((notification: any) => void) | undefined;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -681,10 +703,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin authentication routes
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      const admin = await storage.authenticateAdmin(username, password);
+      
+      if (!admin) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Store admin session (simple approach for demo)
+      req.session.adminId = admin.id;
+      req.session.adminRole = admin.role;
+      req.session.isAdmin = true;
+
+      res.json({ 
+        message: "Login successful",
+        admin: {
+          id: admin.id,
+          username: admin.username,
+          role: admin.role,
+          lastLogin: admin.lastLogin,
+        }
+      });
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.adminId = undefined;
+    req.session.adminRole = undefined;
+    req.session.isAdmin = false;
+    res.json({ message: "Logout successful" });
+  });
+
+  app.get("/api/admin/session", (req, res) => {
+    if (req.session.isAdmin && req.session.adminId) {
+      res.json({
+        isAuthenticated: true,
+        admin: {
+          id: req.session.adminId,
+          role: req.session.adminRole,
+        }
+      });
+    } else {
+      res.json({ isAuthenticated: false });
+    }
+  });
+
+  // Initialize default admin credentials on server startup
+  storage.initializeDefaultAdmin();
+
   // Create HTTP server
   const httpServer = createServer(app);
 
-  // Setup WebSocket server for real-time updates
+  // Enhanced WebSocket setup for real-time updates
   const wss = new WebSocketServer({ 
     server: httpServer, 
     path: "/ws" 
@@ -692,19 +773,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   wss.on("connection", (ws) => {
     console.log("New WebSocket connection established");
+    
+    // Initialize connection properties
+    ws.isAlive = true;
+    ws.subscriptions = new Set();
+    
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
 
     ws.on("message", (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log("Received WebSocket message:", data);
         
-        // Handle different message types here if needed
-        if (data.type === "subscribe") {
-          // Client subscribing to tracking updates
-          ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
+        // Handle different message types
+        switch (data.type) {
+          case 'subscribe_package':
+            ws.subscriptions.add(`package_${data.packageId}`);
+            ws.send(JSON.stringify({ 
+              type: 'subscription_confirmed', 
+              subscription: `package_${data.packageId}` 
+            }));
+            break;
+          case 'subscribe_admin':
+            ws.subscriptions.add('admin_dashboard');
+            ws.send(JSON.stringify({ 
+              type: 'subscription_confirmed', 
+              subscription: 'admin_dashboard' 
+            }));
+            break;
+          case 'unsubscribe':
+            ws.subscriptions.delete(data.subscription);
+            break;
+          case 'ping':
+            ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+            break;
+          case 'get_online_count':
+            const onlineCount = Array.from(wss.clients).filter(client => 
+              client.readyState === WebSocket.OPEN
+            ).length;
+            ws.send(JSON.stringify({ 
+              type: 'online_count', 
+              count: onlineCount 
+            }));
+            break;
+          case "subscribe":
+            // Legacy support
+            ws.send(JSON.stringify({ type: "subscribed", message: "Connected to tracking updates" }));
+            break;
         }
       } catch (error) {
         console.error("Error handling WebSocket message:", error);
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Invalid message format' 
+        }));
       }
     });
 
@@ -712,11 +836,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("WebSocket connection closed");
     });
 
-    // Send welcome message
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    // Send enhanced welcome message
     ws.send(JSON.stringify({ 
       type: "connected", 
-      message: "Connected to ShipTrack real-time updates" 
+      message: "Connected to Shipnix-Express real-time updates",
+      serverTime: new Date().toISOString(),
+      connectionId: Date.now().toString(36)
     }));
+  });
+
+  // Heartbeat to keep connections alive
+  const heartbeat = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (!ws.isAlive) {
+        ws.terminate();
+        return;
+      }
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  // Enhanced broadcast functions for real-time features
+  global.broadcastPackageUpdate = (packageData, trackingEvent) => {
+    const message = JSON.stringify({
+      type: 'packageUpdate',
+      data: packageData,
+      trackingEvent: trackingEvent,
+      timestamp: new Date().toISOString()
+    });
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        // Send to package subscribers and admin dashboard
+        if (client.subscriptions?.has(`package_${packageData.id}`) || 
+            client.subscriptions?.has('admin_dashboard')) {
+          client.send(message);
+        }
+      }
+    });
+  };
+
+  global.broadcastAdminNotification = (notification) => {
+    const message = JSON.stringify({
+      type: 'adminNotification',
+      data: notification,
+      timestamp: new Date().toISOString()
+    });
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN && 
+          client.subscriptions?.has('admin_dashboard')) {
+        client.send(message);
+      }
+    });
+  };
+
+  // Cleanup on server shutdown
+  process.on('SIGTERM', () => {
+    clearInterval(heartbeat);
+    wss.close();
   });
 
   return httpServer;

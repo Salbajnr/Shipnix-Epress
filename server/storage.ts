@@ -6,6 +6,7 @@ import {
   invoices,
   notifications,
   chatMessages,
+  adminCredentials,
   type User,
   type UpsertUser,
   type Package,
@@ -14,18 +15,21 @@ import {
   type Invoice,
   type Notification,
   type ChatMessage,
+  type AdminCredential,
   type InsertPackage,
   type InsertTrackingEvent,
   type InsertQuote,
   type InsertInvoice,
   type InsertNotification,
   type InsertChatMessage,
+  type InsertAdminCredential,
   PACKAGE_STATUSES,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import QRCode from 'qrcode';
+import bcrypt from 'bcryptjs';
 
 // Interface for storage operations
 export interface IStorage {
@@ -70,6 +74,11 @@ export interface IStorage {
   getChatMessagesBySessionId(sessionId: string): Promise<ChatMessage[]>;
   getChatMessagesByPackageId(packageId: number): Promise<ChatMessage[]>;
   markChatMessagesAsRead(sessionId: string, senderType?: string): Promise<void>;
+
+  // Admin authentication operations
+  createAdminCredential(adminData: InsertAdminCredential): Promise<AdminCredential>;
+  authenticateAdmin(username: string, password: string): Promise<AdminCredential | null>;
+  updateAdminLastLogin(id: number): Promise<AdminCredential>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -440,6 +449,82 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error generating QR code:', error);
       return '';
+    }
+  }
+
+  // Admin authentication operations
+  async createAdminCredential(adminData: InsertAdminCredential): Promise<AdminCredential> {
+    // Hash the password before storing
+    const passwordHash = await bcrypt.hash(adminData.passwordHash, 10);
+    
+    const [admin] = await db
+      .insert(adminCredentials)
+      .values({
+        ...adminData,
+        passwordHash,
+      })
+      .returning();
+    
+    return admin;
+  }
+
+  async authenticateAdmin(username: string, password: string): Promise<AdminCredential | null> {
+    const [admin] = await db
+      .select()
+      .from(adminCredentials)
+      .where(and(
+        eq(adminCredentials.username, username),
+        eq(adminCredentials.isActive, true)
+      ));
+
+    if (!admin) {
+      return null;
+    }
+
+    const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
+    if (!isValidPassword) {
+      return null;
+    }
+
+    // Update last login
+    await this.updateAdminLastLogin(admin.id);
+    
+    return admin;
+  }
+
+  async updateAdminLastLogin(id: number): Promise<AdminCredential> {
+    const [updatedAdmin] = await db
+      .update(adminCredentials)
+      .set({ lastLogin: new Date() })
+      .where(eq(adminCredentials.id, id))
+      .returning();
+    
+    return updatedAdmin;
+  }
+
+  // Initialize default admin credentials
+  async initializeDefaultAdmin(): Promise<void> {
+    try {
+      const existingAdmin = await db
+        .select()
+        .from(adminCredentials)
+        .where(eq(adminCredentials.username, "admin"))
+        .limit(1);
+
+      if (existingAdmin.length === 0) {
+        await this.createAdminCredential({
+          username: "admin",
+          passwordHash: "admin123", // This will be hashed by createAdminCredential
+          role: "super_admin",
+          isActive: true,
+        });
+        console.log("✅ Default admin credentials created:");
+        console.log("   Username: admin");
+        console.log("   Password: admin123");
+        console.log("   Role: super_admin");
+      }
+    } catch (error) {
+      console.error("Error initializing default admin:", error);
     }
   }
 }

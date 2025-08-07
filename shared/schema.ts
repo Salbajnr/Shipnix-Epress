@@ -35,6 +35,19 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   isAdmin: boolean("is_admin").default(false),
+  role: varchar("role", { length: 20 }).default("user"), // user, admin, super_admin
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Admin credentials table for stable admin login
+export const adminCredentials = pgTable("admin_credentials", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).unique().notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  role: varchar("role", { length: 20 }).default("admin"),
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -228,6 +241,7 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type AdminCredential = typeof adminCredentials.$inferSelect;
 
 export type Package = typeof packages.$inferSelect;
 export type TrackingEvent = typeof trackingEvents.$inferSelect;
@@ -278,6 +292,12 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+export const insertAdminCredentialSchema = createInsertSchema(adminCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type InsertTrackingEvent = z.infer<typeof insertTrackingEventSchema>;
@@ -285,6 +305,7 @@ export type InsertQuote = z.infer<typeof insertQuoteSchema>;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type InsertAdminCredential = z.infer<typeof insertAdminCredentialSchema>;
 
 // Package status constants
 export const PACKAGE_STATUSES = {
