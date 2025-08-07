@@ -173,42 +173,18 @@ export default function Landing() {
               </Card>
             </div>
 
-            {/* Hero Image Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="relative overflow-hidden rounded-2xl shadow-xl">
-                  <img 
-                    src="/attached_assets/IMG_5473_1754582326179.jpeg"
-                    alt="Global shipping network"
-                    className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                </div>
-                <div className="relative overflow-hidden rounded-2xl shadow-xl">
-                  <img 
-                    src="/attached_assets/IMG_5475_1754582326180.jpeg"
-                    alt="Package delivery"
-                    className="w-full h-32 object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                </div>
-              </div>
-              <div className="space-y-4 mt-8">
-                <div className="relative overflow-hidden rounded-2xl shadow-xl">
-                  <img 
-                    src="/attached_assets/IMG_5474_1754582326180.jpeg"
-                    alt="Logistics technology"
-                    className="w-full h-32 object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                </div>
-                <div className="relative overflow-hidden rounded-2xl shadow-xl">
-                  <img 
-                    src="/attached_assets/IMG_5476_1754582326180.jpeg"
-                    alt="Express delivery"
-                    className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            {/* Hero Image */}
+            <div className="relative">
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+                <img 
+                  src="/attached_assets/IMG_5473_1754582326179.jpeg"
+                  alt="Global shipping network"
+                  className="w-full h-96 object-cover hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                <div className="absolute bottom-6 left-6 text-white">
+                  <h3 className="text-xl font-semibold mb-2">Global Network</h3>
+                  <p className="text-white/90">Connecting 220+ countries worldwide</p>
                 </div>
               </div>
             </div>
@@ -226,6 +202,22 @@ export default function Landing() {
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Advanced logistics technology meets exceptional service to deliver your packages faster, safer, and smarter.
             </p>
+            
+            {/* Features Header Image */}
+            <div className="mt-12 mb-16 relative overflow-hidden rounded-2xl shadow-xl max-w-4xl mx-auto">
+              <img 
+                src="/attached_assets/IMG_5474_1754582326180.jpeg"
+                alt="Advanced logistics technology"
+                className="w-full h-64 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-purple-600/80" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <h3 className="text-2xl font-bold mb-2">Cutting-Edge Technology</h3>
+                  <p className="text-white/90">Real-time tracking and smart logistics solutions</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -329,6 +321,20 @@ export default function Landing() {
             </p>
           </div>
 
+          {/* Services Hero Image */}
+          <div className="mb-16 relative overflow-hidden rounded-2xl shadow-xl">
+            <img 
+              src="/attached_assets/IMG_5475_1754582326180.jpeg"
+              alt="Package delivery services"
+              className="w-full h-80 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            <div className="absolute bottom-8 left-8 text-white">
+              <h3 className="text-3xl font-bold mb-2">Professional Delivery</h3>
+              <p className="text-white/90 text-lg">Secure, fast, and reliable package delivery worldwide</p>
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center group">
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
@@ -364,8 +370,19 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src="/attached_assets/IMG_5476_1754582326180.jpeg"
+            alt="Express delivery background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-indigo-600/90" />
+        </div>
+        
+        {/* Content */}
+        <div className="relative max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Ship Smarter?
           </h2>
@@ -391,18 +408,31 @@ export default function Landing() {
 
       {/* Admin Access */}
       <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-              Administrator Access
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Access the admin dashboard to manage shipments, quotes, and customer accounts.
-            </p>
-            <Button onClick={handleAdminLogin} className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800">
-              <LogIn className="mr-2 h-4 w-4" />
-              Admin Login
-            </Button>
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            {/* Admin Image */}
+            <div className="relative overflow-hidden rounded-2xl shadow-xl">
+              <img 
+                src="/attached_assets/IMG_5286_1754582450192.jpeg"
+                alt="Admin dashboard and management"
+                className="w-full h-64 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            </div>
+            
+            {/* Admin Content */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                Administrator Access
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Access the admin dashboard to manage shipments, quotes, and customer accounts.
+              </p>
+              <Button onClick={handleAdminLogin} className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800">
+                <LogIn className="mr-2 h-4 w-4" />
+                Admin Login
+              </Button>
+            </div>
           </div>
         </div>
       </section>

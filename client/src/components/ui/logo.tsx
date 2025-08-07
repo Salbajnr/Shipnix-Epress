@@ -23,14 +23,13 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      {/* Logo Image - Using the last image as logo */}
+      {/* Logo Image - Using shipnix-logo.png */}
       <div className={cn("relative overflow-hidden rounded-xl", sizeClasses[size])}>
         <img 
-          src="/attached_assets/fd10180d-ffff-4e5d-898e-c1c06bdfc579_1754582450193.jpeg"
+          src="/src/assets/shipnix-logo.png"
           alt="Shipnix Express Logo"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain bg-white/10 backdrop-blur-sm"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-xl" />
       </div>
       
       {/* Logo Text */}
