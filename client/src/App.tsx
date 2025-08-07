@@ -18,6 +18,7 @@ import QuoteManagement from "@/pages/quote-management";
 import QuoteEdit from "@/pages/quote-edit";
 import InvoiceManagement from "@/pages/invoice-management";
 import PackageManagement from "@/pages/package-management";
+import AdminLogin from "@/pages/admin-login";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/faq" component={FAQPage} />
       <Route path="/support" component={FAQPage} />
       <Route path="/quote" component={QuoteRequest} />
+      <Route path="/admin" component={AdminLogin} />
 
       {/* Protected Admin Routes */}
       {isLoading || !isAuthenticated ? (
