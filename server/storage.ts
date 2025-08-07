@@ -51,6 +51,7 @@ export interface IStorage {
   getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined>;
   getAllQuotes(limit?: number): Promise<Quote[]>;
   updateQuoteStatus(id: number, status: string): Promise<Quote>;
+  updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote>;
 
   // Invoice operations
   createInvoice(invoiceData: InsertInvoice): Promise<Invoice>;
@@ -230,12 +231,6 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(trackingEvents.timestamp));
   }
 
-  // Helper methods
-  private generateTrackingId(): string {
-    // Generate a tracking ID in format: ST-XXXXXXXXX (ShipTrack-9chars)
-    return `ST-${nanoid(9).toUpperCase()}`;
-  }
-
   private getStatusDescription(status: string): string {
     const descriptions = {
       [PACKAGE_STATUSES.CREATED]: "Package has been registered for shipping",
@@ -282,6 +277,16 @@ export class DatabaseStorage implements IStorage {
     const [updatedQuote] = await db
       .update(quotes)
       .set({ status, updatedAt: new Date() })
+      .where(eq(quotes.id, id))
+      .returning();
+    
+    return updatedQuote;
+  }
+
+  async updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote> {
+    const [updatedQuote] = await db
+      .update(quotes)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(quotes.id, id))
       .returning();
     

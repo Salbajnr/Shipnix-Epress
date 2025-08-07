@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const userId = req.user.claims.sub;
 
-      const invoice = await storage.updateInvoicePaymentStatus(id, "paid");
+      const invoice = await storage.updateInvoicePayment(id, "paid");
       
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
@@ -530,10 +530,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recipientPhone: quote.recipientPhone || "",
             recipientAddress: quote.recipientAddress,
             description: quote.packageDescription || "Package from approved quote",
-            weight: quote.weight ? parseFloat(quote.weight.toString()) : 0,
+            weight: quote.weight ? quote.weight.toString() : "0",
             dimensions: quote.dimensions || "",
-            shippingCost: quote.totalCost ? parseFloat(quote.totalCost.toString()) : 0,
-            deliveryPriceAdjustment: quote.deliveryFee ? parseFloat(quote.deliveryFee.toString()) : 0,
+            shippingCost: quote.totalCost ? quote.totalCost.toString() : "0",
+            deliveryPriceAdjustment: quote.deliveryFee ? quote.deliveryFee.toString() : "0",
             scheduledTimeSlot: quote.deliveryTimeSlot,
             paymentStatus: "paid",
             currentStatus: PACKAGE_STATUSES.CREATED, // Now packages start as "created" after payment
