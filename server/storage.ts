@@ -98,16 +98,11 @@ export class DatabaseStorage implements IStorage {
   async createPackage(packageData: InsertPackage): Promise<Package> {
     // Generate unique tracking ID
     const trackingId = this.generateTrackingId();
-    
-    // Generate QR code for the tracking ID
-    const qrCodeDataUrl = await QRCode.toDataURL(trackingId, {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
+    console.log("Generated tracking ID:", trackingId);
+
+    // Generate QR code for tracking
+    const qrCodeDataUrl = await this.generateQRCode(trackingId);
+    console.log("Generated QR code for tracking ID:", trackingId);
 
     // Calculate delivery price adjustment based on time slot
     let deliveryPriceAdjustment = 0;
@@ -129,7 +124,7 @@ export class DatabaseStorage implements IStorage {
           deliveryPriceAdjustment = 0;
       }
     }
-    
+
     const [newPackage] = await db
       .insert(packages)
       .values({
@@ -247,7 +242,7 @@ export class DatabaseStorage implements IStorage {
   // Quote operations
   async createQuote(quoteData: InsertQuote): Promise<Quote> {
     const quoteNumber = this.generateQuoteNumber();
-    
+
     const [newQuote] = await db
       .insert(quotes)
       .values({
@@ -255,7 +250,7 @@ export class DatabaseStorage implements IStorage {
         quoteNumber,
       })
       .returning();
-    
+
     return newQuote;
   }
 
@@ -279,7 +274,7 @@ export class DatabaseStorage implements IStorage {
       .set({ status, updatedAt: new Date() })
       .where(eq(quotes.id, id))
       .returning();
-    
+
     return updatedQuote;
   }
 
@@ -289,14 +284,14 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(quotes.id, id))
       .returning();
-    
+
     return updatedQuote;
   }
 
   // Invoice operations
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     const invoiceNumber = this.generateInvoiceNumber();
-    
+
     const [newInvoice] = await db
       .insert(invoices)
       .values({
@@ -304,7 +299,7 @@ export class DatabaseStorage implements IStorage {
         invoiceNumber,
       })
       .returning();
-    
+
     return newInvoice;
   }
 
@@ -332,7 +327,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(invoices.id, id))
       .returning();
-    
+
     return updatedInvoice;
   }
 
@@ -342,7 +337,7 @@ export class DatabaseStorage implements IStorage {
       .insert(notifications)
       .values(notificationData)
       .returning();
-    
+
     return newNotification;
   }
 
@@ -364,7 +359,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(notifications.id, id))
       .returning();
-    
+
     return updatedNotification;
   }
 
@@ -421,6 +416,31 @@ export class DatabaseStorage implements IStorage {
   private generateInvoiceNumber(): string {
     const timestamp = Date.now().toString().slice(-8);
     return `INV-${timestamp}`;
+  }
+
+  // Helper to generate QR code with the correct tracking URL
+  private async generateQRCode(trackingId: string): Promise<string> {
+    try {
+      const QRCode = require('qrcode');
+      // Use the public tracking URL that doesn't require authentication
+      const trackingUrl = `${process.env.REPL_DOMAIN || 'https://your-domain.com'}/public-tracking?track=${trackingId}`;
+
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      console.log('QR code generated for URL:', trackingUrl);
+      return qrCodeDataUrl;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      return '';
+    }
   }
 }
 

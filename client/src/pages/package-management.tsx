@@ -93,14 +93,7 @@ export default function PackageManagement() {
   
   // Redirect if not authenticated
   if (!isLoading && !isAuthenticated) {
-    toast({
-      title: "Unauthorized",
-      description: "You are logged out. Logging in again...",
-      variant: "destructive",
-    });
-    setTimeout(() => {
-      window.location.href = "/api/login";
-    }, 500);
+    window.location.href = "/login";
     return null;
   }
 
@@ -115,9 +108,10 @@ export default function PackageManagement() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Package Created",
-        description: `Package created with tracking ID: ${data.trackingId}`,
+        title: "Package Created Successfully",
+        description: `Tracking ID: ${data.trackingId}. QR code generated for easy tracking.`,
       });
+      console.log("Package created:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
       setShowCreateDialog(false);
       setNewPackage({
@@ -135,6 +129,11 @@ export default function PackageManagement() {
         shippingCost: "",
         estimatedDelivery: "",
       });
+      
+      // Show detailed success message with tracking information
+      setTimeout(() => {
+        alert(`Package Created Successfully!\n\nTracking ID: ${data.trackingId}\n\nCustomers can track this package at:\n/public-tracking\n\nQR Code has been generated for easy tracking.`);
+      }, 100);
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -651,9 +650,20 @@ export default function PackageManagement() {
                           <CheckCircle className="h-3 w-3" />
                           {pkg.paymentStatus}
                         </Badge>
+                        <Badge variant="outline" className="text-xs font-mono">
+                          Public Tracking: /public-tracking?track={pkg.trackingId}
+                        </Badge>
                       </div>
                       
                       <div className="flex items-center gap-3">
+                        <Button 
+                          onClick={() => window.open(`/public-tracking?track=${pkg.trackingId}`, '_blank')}
+                          variant="secondary"
+                          size="sm"
+                        >
+                          <Package className="h-4 w-4 mr-2" />
+                          Test Tracking
+                        </Button>
                         <Button 
                           onClick={() => openStatusDialog(pkg)}
                           variant="outline"

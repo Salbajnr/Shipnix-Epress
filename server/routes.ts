@@ -37,17 +37,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/packages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log("Creating package with data:", req.body);
+      
       const packageData = insertPackageSchema.parse({
         ...req.body,
         createdBy: userId,
+        currentStatus: PACKAGE_STATUSES.CREATED,
+        paymentStatus: "paid", // Admin-created packages are pre-paid
       });
 
       const newPackage = await storage.createPackage(packageData);
+      console.log("Package created successfully:", newPackage.trackingId);
       
       // Send initial notifications for package creation
-      await notificationService.sendPackageStatusUpdate(newPackage, PACKAGE_STATUSES.CREATED);
+      if (newPackage.currentStatus === PACKAGE_STATUSES.CREATED) {
+        await notificationService.sendPackageStatusUpdate(newPackage, PACKAGE_STATUSES.CREATED);
+      }
       
-      res.json(newPackage);
+      res.json({
+        ...newPackage,
+        message: "Package created successfully",
+        trackingUrl: `/track/${newPackage.trackingId}`
+      });
     } catch (error) {
       console.error("Error creating package:", error);
       if (error instanceof z.ZodError) {
@@ -228,7 +239,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/packages", isAuthenticated, async (req: any, res) => {
     try {
       const packages = await storage.getAllPackages();
-      res.json(packages);
+      
+      // Add tracking events for each package
+      const packagesWithEvents = await Promise.all(
+        packages.map(async (pkg) => {
+          const events = await storage.getTrackingEventsByPackageId(pkg.id);
+          return {
+            ...pkg,
+            trackingEvents: events,
+            trackingUrl: `/public-tracking?track=${pkg.trackingId}`,
+            adminTrackingUrl: `/track/${pkg.trackingId}`
+          };
+        })
+      );
+      
+      res.json(packagesWithEvents);
     } catch (error) {
       console.error("Error fetching admin packages:", error);
       res.status(500).json({ message: "Failed to fetch packages" });

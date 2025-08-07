@@ -84,6 +84,16 @@ export default function PublicTracking() {
     }
   }, [params.id]);
 
+  // Check for tracking ID in URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const trackParam = urlParams.get('track');
+    if (trackParam && trackParam.startsWith('ST-')) {
+      setTrackingId(trackParam);
+      setSearchTriggered(true);
+    }
+  }, []);
+
   const { data: trackingResult, isLoading, error } = useQuery<TrackingResult>({
     queryKey: ["/api/public/track", trackingId],
     queryFn: async () => {
@@ -164,7 +174,7 @@ export default function PublicTracking() {
                   {isLoading ? "Searching..." : "Track"}
                 </Button>
               </div>
-              
+
               <div className="flex justify-center">
                 <Button
                   variant="outline"

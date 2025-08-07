@@ -185,6 +185,19 @@ export default function Header({ showUserMenu = true, userName = "John Doe" }: H
                   <span>{item.name}</span>
                 </Link>
               ))}
+              {/* Admin specific links */}
+              <Link 
+                to="/quote-management" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Quote Management
+              </Link>
+              <Link 
+                to="/package-management" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Package Management
+              </Link>
               {!showUserMenu && (
                 <div className="flex flex-col space-y-2 pt-4 border-t">
                   <Button 

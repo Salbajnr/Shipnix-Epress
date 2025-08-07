@@ -33,7 +33,7 @@ function Router() {
       <Route path="/faq" component={FAQPage} />
       <Route path="/support" component={FAQPage} />
       <Route path="/quote" component={QuoteRequest} />
-      
+
       {/* Protected Admin Routes */}
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
