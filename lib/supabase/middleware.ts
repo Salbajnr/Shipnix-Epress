@@ -28,12 +28,15 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+  const publicAdminRoutes = ['/admin/login'];
   const protectedRoutes = ['/admin'];
-  const isProtected = protectedRoutes.some(r => request.nextUrl.pathname.startsWith(r));
+  const isPublicAdmin = publicAdminRoutes.some(r => pathname === r || pathname.startsWith(r + '/'));
+  const isProtected = !isPublicAdmin && protectedRoutes.some(r => pathname.startsWith(r));
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/admin/login';
     return NextResponse.redirect(url);
   }
 
