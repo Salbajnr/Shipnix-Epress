@@ -45,8 +45,6 @@ export default function Landing() {
   const [activeTab, setActiveTab] = useState<"track" | "quote" | "about">("track");
   const { toast } = useToast();
 
-
-
   // Real tracking functionality - redirects to public tracking page
   // No query needed here as we redirect to the tracking page
 
@@ -56,7 +54,7 @@ export default function Landing() {
       window.location.href = `/public-tracking?track=${trackingId.toUpperCase()}`;
     } else {
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Please enter a valid tracking ID",
         variant: "destructive",
       });
@@ -78,7 +76,7 @@ export default function Landing() {
   };
 
   const formatStatus = (status: string) => {
-    return status.split("_").map(word => 
+    return status.split("_").map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ");
   };
@@ -98,15 +96,13 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 relative overflow-x-hidden">
       <Header />
-      
+
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-1/2 -left-40 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
-
-
 
       {/* Hero Section */}
       <section id="hero" className="pt-20 pb-20 px-4 sm:px-6 lg:px-8 relative">
@@ -125,19 +121,131 @@ export default function Landing() {
                   </span>
                 </h1>
                 <p className="text-xl text-gray-600 dark:text-gray-300 max-w-lg">
-                  Ship to 220+ countries with real-time tracking, smart pricing, and 24/7 support. 
+                  Ship to 220+ countries with real-time tracking, smart pricing, and 24/7 support.
                   Experience the future of global shipping.
                 </p>
               </div>
 
               {/* Quick Actions */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/quote">
-                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                    <Calculator className="mr-2 h-5 w-5" />
-                    Get Quote
+                <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105" asChild>
+                  <a href="/api/login">
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Admin Login
+                  </a>
+                </Button>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 px-8 py-4 text-lg hover:scale-105 transition-transform">
+                  Watch Demo
+                </Button>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">220+</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Countries</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">99.9%</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Uptime</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">24/7</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Support</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="relative z-10">
+                <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-3/4 animate-pulse delay-200"></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                        <Truck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-2/3 animate-pulse delay-400"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-3xl blur-3xl opacity-20 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Real-time Tracking Section */}
+      <section id="tracking" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="space-y-6 mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+              Track Your Shipment
+              <span className="block text-blue-600 dark:text-blue-400">In Real-Time</span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Advanced AI-powered tracking with live updates and predictive analytics
+            </p>
+          </div>
+
+          {/* Advanced Tracking Input */}
+          <div className="max-w-3xl mx-auto">
+            <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-0 shadow-2xl">
+              <CardHeader className="text-center pb-8">
+                <CardTitle className="flex items-center justify-center gap-3 text-2xl">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <Search className="h-5 w-5 text-white" />
+                  </div>
+                  Smart Tracking Portal
+                </CardTitle>
+                <CardDescription className="text-lg">
+                  Enter your tracking ID or scan QR code for instant updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Enter tracking ID (e.g., ST-DEMO12345)"
+                    value={trackingId}
+                    onChange={(e) => {
+                      setTrackingId(e.target.value.toUpperCase());
+                      setSearchTriggered(false);
+                    }}
+                    onKeyPress={(e) => e.key === "Enter" && handleTrack()}
+                    className="text-lg h-14 pl-6 pr-32 bg-gray-50 dark:bg-gray-900/50 border-2 focus:border-blue-500 rounded-xl font-mono"
+                  />
+                  <Button
+                    onClick={handleTrack}
+                    disabled={!trackingId.trim()}
+                    className="absolute right-2 top-2 h-10 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg"
+                  >
+                    Track<ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
-                </Link>
+                </div>
                 <Link href="/track">
                   <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     <Search className="mr-2 h-5 w-5" />
@@ -145,46 +253,20 @@ export default function Landing() {
                   </Button>
                 </Link>
               </div>
+            </Card>
+          </div>
 
-              {/* Quick Track */}
-              <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-white/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Search className="h-5 w-5" />
-                    Quick Track
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter tracking ID (e.g., ST-12345678)"
-                      value={trackingId}
-                      onChange={(e) => setTrackingId(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
-                      className="flex-1"
-                    />
-                    <Button onClick={handleTrack} size="sm">
-                      Track
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Hero Image */}
-            <div className="relative">
-              <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-                <img 
-                  src="/attached_assets/IMG_5473_1754582326179.jpeg"
-                  alt="Global shipping network"
-                  className="w-full h-96 object-cover hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h3 className="text-xl font-semibold mb-2">Global Network</h3>
-                  <p className="text-white/90">Connecting 220+ countries worldwide</p>
-                </div>
-              </div>
+          {/* Hero Image */}
+          <div className="mt-16 relative overflow-hidden rounded-2xl shadow-2xl max-w-4xl mx-auto">
+            <img
+              src="/attached_assets/IMG_5473_1754582326179.jpeg"
+              alt="Global shipping network"
+              className="w-full h-96 object-cover hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute bottom-6 left-6 text-white">
+              <h3 className="text-xl font-semibold mb-2">Global Network</h3>
+              <p className="text-white/90">Connecting 220+ countries worldwide</p>
             </div>
           </div>
         </div>
@@ -200,10 +282,10 @@ export default function Landing() {
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Advanced logistics technology meets exceptional service to deliver your packages faster, safer, and smarter.
             </p>
-            
+
             {/* Features Header Image */}
             <div className="mt-12 mb-16 relative overflow-hidden rounded-2xl shadow-xl max-w-4xl mx-auto">
-              <img 
+              <img
                 src="/attached_assets/IMG_5474_1754582326180.jpeg"
                 alt="Advanced logistics technology"
                 className="w-full h-64 object-cover"
@@ -292,196 +374,20 @@ export default function Landing() {
 
             <Card className="group hover:shadow-2xl transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-white/20 hover:scale-105">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Users className="h-6 w-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Award className="h-6 w-6 text-white" />
                 </div>
-                <CardTitle>24/7 Support</CardTitle>
+                <CardTitle>Quality Assurance</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Round-the-clock customer support with live chat, phone assistance, and dedicated account managers.
+                  ISO certified processes, continuous quality monitoring, and customer satisfaction guarantee.
                 </p>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
-
-      {/* Services Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Complete Logistics Solutions
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              From small packages to freight shipments, we handle all your logistics needs.
-            </p>
-          </div>
-
-          {/* Services Hero Image */}
-          <div className="mb-16 relative overflow-hidden rounded-2xl shadow-xl">
-            <img 
-              src="/attached_assets/IMG_5475_1754582326180.jpeg"
-              alt="Package delivery services"
-              className="w-full h-80 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            <div className="absolute bottom-8 left-8 text-white">
-              <h3 className="text-3xl font-bold mb-2">Professional Delivery</h3>
-              <p className="text-white/90 text-lg">Secure, fast, and reliable package delivery worldwide</p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Package className="h-10 w-10 text-white" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Express Packages</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Fast, reliable delivery for documents, packages, and urgent shipments with tracking and insurance.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Truck className="h-10 w-10 text-white" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Freight & Cargo</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Heavy cargo, palletized goods, and oversized shipments with specialized handling and equipment.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <Ship className="h-10 w-10 text-white" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">International Trade</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Customs clearance, trade compliance, and international shipping solutions for global commerce.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <img 
-            src="/attached_assets/IMG_5476_1754582326180.jpeg"
-            alt="Express delivery background"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 via-purple-600/90 to-indigo-600/90" />
-        </div>
-        
-        {/* Content */}
-        <div className="relative max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Ship Smarter?
-          </h2>
-          <p className="text-xl text-white/90 mb-8">
-            Join thousands of businesses that trust Shipnix Express for their global logistics needs.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/quote">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                <Calculator className="mr-2 h-5 w-5" />
-                Get Instant Quote
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-gray-900">
-                <Users className="mr-2 h-5 w-5" />
-                Create Account
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Admin Access */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            {/* Admin Image */}
-            <div className="relative overflow-hidden rounded-2xl shadow-xl">
-              <img 
-                src="/attached_assets/IMG_5286_1754582450192.jpeg"
-                alt="Admin dashboard and management"
-                className="w-full h-64 object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-            </div>
-            
-            {/* Admin Content */}
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                Administrator Access
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Access the admin dashboard to manage shipments, quotes, and customer accounts.
-              </p>
-              <Button onClick={handleAdminLogin} className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800">
-                <LogIn className="mr-2 h-4 w-4" />
-                Admin Login
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <Logo size="sm" />
-              <p className="text-gray-400 mt-4">
-                Global logistics solutions with real-time tracking and 24/7 support.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Services</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Express Delivery</li>
-                <li>International Shipping</li>
-                <li>Freight Services</li>
-                <li>Customs Clearance</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Track Package</li>
-                <li>Get Quote</li>
-                <li>FAQ</li>
-                <li>Contact Us</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <div className="space-y-2 text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>+1 (555) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <span>support@shipnix.com</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Shipnix Express. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

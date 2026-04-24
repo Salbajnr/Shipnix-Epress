@@ -75,7 +75,7 @@ export default function QuoteEdit() {
 
   const quoteId = params?.id ? parseInt(params.id) : null;
 
-  const { data: quote, isLoading: quoteLoading } = useQuery({
+  const { data: quote, isLoading: quoteLoading } = useQuery<Quote>({
     queryKey: ["/api/quotes", quoteId],
     enabled: !!quoteId,
     retry: false,
