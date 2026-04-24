@@ -71,10 +71,11 @@ export default function QuoteManagement() {
     return null;
   }
 
-  const { data: quotes, isLoading: quotesLoading } = useQuery({
+  const { data: quotesRaw, isLoading: quotesLoading } = useQuery({
     queryKey: ["/api/quotes"],
     retry: false,
   });
+  const quotes: Quote[] = Array.isArray(quotesRaw) ? quotesRaw : [];
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {

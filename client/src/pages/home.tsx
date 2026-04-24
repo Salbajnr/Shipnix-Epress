@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users, FileText, CreditCard, BarChart3, QrCode, Mail, Phone } from "lucide-react";
+import { Package, Plus, Truck, MapPin, Clock, Edit, LogOut, Users, FileText, CreditCard, BarChart3, QrCode, Mail, Phone, Receipt } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import Logo from "@/components/Logo";
@@ -89,10 +90,7 @@ export default function Home() {
         estimatedDelivery: data.estimatedDelivery ? new Date(data.estimatedDelivery).toISOString() : null,
         scheduledDeliveryDate: data.scheduledDeliveryDate ? new Date(data.scheduledDeliveryDate).toISOString() : null,
       };
-      return await apiRequest("/api/packages", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      return await apiRequest("POST", "/api/packages", payload);
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
@@ -108,10 +106,7 @@ export default function Home() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, location }: { id: number; status: string; location?: string }) => {
-      return await apiRequest(`/api/packages/${id}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status, location }),
-      });
+      return await apiRequest("PATCH", `/api/packages/${id}/status`, { status, location });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
@@ -196,7 +191,7 @@ export default function Home() {
               <div className="flex items-center space-x-2">
                 <Users className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {user?.firstName || user?.email || "Admin"}
+                  {(user as any)?.firstName || (user as any)?.email || "Admin"}
                 </span>
               </div>
               <Button variant="outline" asChild>
@@ -576,7 +571,7 @@ export default function Home() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {formData.scheduledTimeSlot && deliverySlots.find(s => s.slot === formData.scheduledTimeSlot)?.price > 0 && (
+                        {formData.scheduledTimeSlot && (deliverySlots.find(s => s.slot === formData.scheduledTimeSlot)?.price ?? 0) > 0 && (
                           <p className="text-sm text-green-600 dark:text-green-400 mt-1">
                             +${deliverySlots.find(s => s.slot === formData.scheduledTimeSlot)?.price} delivery fee
                           </p>
@@ -666,14 +661,14 @@ export default function Home() {
                             <span className="font-medium">Cost:</span> {pkg.shippingCost ? `$${pkg.shippingCost}` : "N/A"}
                           </div>
                           <div>
-                            <span className="font-medium">Payment:</span> {formatPaymentMethod(pkg.paymentMethod)}
+                            <span className="font-medium">Payment:</span> {formatPaymentMethod(pkg.paymentMethod ?? "")}
                           </div>
                           <div>
-                            <span className="font-medium">Created:</span> {new Date(pkg.createdAt).toLocaleDateString()}
+                            <span className="font-medium">Created:</span> {pkg.createdAt ? new Date(pkg.createdAt).toLocaleDateString() : "N/A"}
                           </div>
                           {pkg.scheduledDeliveryDate && (
                             <div>
-                              <span className="font-medium">Scheduled:</span> {new Date(pkg.scheduledDeliveryDate).toLocaleDateString()}
+                              <span className="font-medium">Scheduled:</span> {new Date(pkg.scheduledDeliveryDate as unknown as string).toLocaleDateString()}
                             </div>
                           )}
                           {pkg.scheduledTimeSlot && (
@@ -681,7 +676,7 @@ export default function Home() {
                               <span className="font-medium">Time Slot:</span> {pkg.scheduledTimeSlot}
                             </div>
                           )}
-                          {pkg.deliveryPriceAdjustment > 0 && (
+                          {parseFloat(pkg.deliveryPriceAdjustment ?? "0") > 0 && (
                             <div>
                               <span className="font-medium">Delivery Fee:</span> +${pkg.deliveryPriceAdjustment}
                             </div>
