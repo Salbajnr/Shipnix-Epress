@@ -47,5 +47,5 @@ stack = "FULLSTACK_JS"
 [userenv]
 
 [userenv.shared]
-NEXT_PUBLIC_SUPABASE_URL = ""
-NEXT_PUBLIC_SUPABASE_ANON_KEY = ""
+NEXT_PUBLIC_SUPABASE_URL = "https://rwpymjtrfkkzfbjelgvg.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3cHltanRyZmtremZiamVsZ3ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMzkyMTMsImV4cCI6MjA5MjYxNTIxM30.SmrdoolQEI7L--5m6Vuq7voy7X8aor7y6lRcXPJC4wM"
