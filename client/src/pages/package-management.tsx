@@ -102,14 +102,18 @@ export default function PackageManagement() {
     retry: false,
   });
 
+  // Type guard to ensure packages is an array
+  const packagesList = Array.isArray(packages) ? packages : [];
+
   const createPackageMutation = useMutation({
     mutationFn: async (packageData: any) => {
-      return apiRequest("POST", "/api/packages", packageData);
+      const response = await apiRequest("POST", "/api/packages", packageData);
+      return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Package Created Successfully",
-        description: `Tracking ID: ${data.trackingId}. QR code generated for easy tracking.`,
+        description: `Tracking ID: ${data.trackingId || 'Generated'}`,
       });
       console.log("Package created:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/packages"] });
@@ -135,7 +139,8 @@ export default function PackageManagement() {
         alert(`Package Created Successfully!\n\nTracking ID: ${data.trackingId}\n\nCustomers can track this package at:\n/public-tracking\n\nQR Code has been generated for easy tracking.`);
       }, 100);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Package creation error:', error);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -148,8 +153,8 @@ export default function PackageManagement() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to create package",
+        title: "Error Creating Package",
+        description: error.message || "Failed to create package. Please try again.",
         variant: "destructive",
       });
     },
@@ -189,22 +194,90 @@ export default function PackageManagement() {
   });
 
   const handleCreatePackage = () => {
-    if (!newPackage.senderName || !newPackage.senderEmail || !newPackage.recipientName || !newPackage.recipientAddress) {
+    // Validation
+    if (!newPackage.senderName.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Sender name is required",
         variant: "destructive",
       });
       return;
     }
 
-    createPackageMutation.mutate({
-      ...newPackage,
-      weight: parseFloat(newPackage.weight) || 0,
-      shippingCost: parseFloat(newPackage.shippingCost) || 0,
+    if (!newPackage.senderAddress.trim()) {
+      toast({
+        title: "Validation Error", 
+        description: "Sender address is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPackage.recipientName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Recipient name is required", 
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPackage.recipientAddress.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Recipient address is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPackage.description.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Package description is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPackage.weight || parseFloat(newPackage.weight) <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Valid weight is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPackage.shippingCost || parseFloat(newPackage.shippingCost) <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Valid shipping cost is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create package data
+    const packageData = {
+      senderName: newPackage.senderName.trim(),
+      senderEmail: newPackage.senderEmail.trim() || null,
+      senderPhone: newPackage.senderPhone.trim() || null,
+      senderAddress: newPackage.senderAddress.trim(),
+      recipientName: newPackage.recipientName.trim(),
+      recipientEmail: newPackage.recipientEmail.trim() || null,
+      recipientPhone: newPackage.recipientPhone.trim() || null,
+      recipientAddress: newPackage.recipientAddress.trim(),
+      packageDescription: newPackage.description.trim(),
+      weight: newPackage.weight,
+      dimensions: newPackage.dimensions.trim() || null,
+      shippingCost: newPackage.shippingCost,
+      estimatedDelivery: newPackage.estimatedDelivery || null,
       paymentStatus: "paid", // Admin-created packages are marked as paid
       currentStatus: "created",
-    });
+    };
+
+    createPackageMutation.mutate(packageData);
   };
 
   const handleStatusUpdate = () => {
@@ -267,7 +340,7 @@ export default function PackageManagement() {
             </div>
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-lg px-4 py-2">
-                {packages?.length || 0} Total Packages
+                {packagesList.length} Total Packages
               </Badge>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
@@ -516,7 +589,7 @@ export default function PackageManagement() {
           </Dialog>
 
           <div className="grid gap-6">
-            {packages?.map((pkg: PackageType) => {
+            {packagesList.map((pkg: PackageType) => {
               const statusInfo = PACKAGE_STATUSES[pkg.currentStatus as keyof typeof PACKAGE_STATUSES];
               const StatusIcon = statusInfo?.icon || Package;
               
@@ -679,7 +752,7 @@ export default function PackageManagement() {
               );
             })}
             
-            {(!packages || packages.length === 0) && (
+            {packagesList.length === 0 && (
               <Card>
                 <CardContent className="text-center py-12">
                   <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />

@@ -35,8 +35,8 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "next dev -p 5000"
 waitForPort = 5000
 
-[agent]
-integrations = ["javascript_log_in_with_replit==1.0.0", "javascript_database==1.0.0", "javascript_websocket==1.0.0"]
+[workflows.workflow.metadata]
+outputType = "webview"

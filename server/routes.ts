@@ -581,6 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const invoice = await storage.updateInvoicePayment(id, "paid");
 
+      const invoice = await storage.updateInvoicePayment(id, "paid", new Date());
       
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
@@ -599,8 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recipientEmail: quote.recipientEmail,
             recipientPhone: quote.recipientPhone || "",
             recipientAddress: quote.recipientAddress,
-            description: quote.packageDescription || "Package from approved quote",
-
+            packageDescription: quote.packageDescription || "Package from approved quote",
             weight: quote.weight ? quote.weight.toString() : "0",
             dimensions: quote.dimensions || "",
             shippingCost: quote.totalCost ? quote.totalCost.toString() : "0",
