@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FedEx - Ship. Track. Manage.</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+      tailwind.config = {
+          theme: {
+              extend: {
+                  colors: {
+                      'fedex-purple': '#663399',
+                      'fedex-orange': '#ff6600'
+                  }
+              }
+          }
+      }
+  </script>
+  <style>
+      .gradient-bg {
+          background: linear-gradient(135deg, #663399 0%, #552288 100%);
+      }
+      .hero-bg {
+          background: linear-gradient(135deg, #663399 0%, #552288 100%);
+          position: relative;
+          overflow: hidden;
+      }
+      .hero-bg::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image:
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" opacity="0.1">✈️</text></svg>'),
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" opacity="0.1">🚛</text></svg>'),
+              url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" opacity="0.1">📦</text></svg>');
+          background-position: 85% 20%, 15% 80%, 75% 60%;
+          background-repeat: no-repeat;
+          background-size: 200px, 150px, 100px;
+          z-index: 1;
+      }
+      .hero-content {
+          position: relative;
+          z-index: 2;
+      }
+      .status-delivered { background: #d4edda; color: #155724; }
+      .status-in-transit { background: #d1ecf1; color: #0c5460; }
+      .status-shipped { background: #fff3cd; color: #856404; }
+      .status-out-for-delivery { background: #f8d7da; color: #721c24; }
+      .status-error { background: #f8d7da; color: #721c24; }
+      .status-unknown { background: #f8f9fa; color: #6c757d; }
+      .tracking-timeline {
+          position: relative;
+      }
+      .tracking-event {
+          position: relative;
+          padding-left: 2rem;
+          margin-left: 0.5rem;
+          border-left: 2px solid #e5e7eb;
+          padding-bottom: 1rem;
+      }
+      .tracking-event::before {
+          content: '';
+          position: absolute;
+          left: -5px;
+          top: 0;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #663399;
+      }
+      .tracking-event.completed::before {
+          background: #10b981;
+      }
+      .whatsapp-float {
+          position: fixed;
+          bottom: 2rem;
+          right: 2rem;
+          width: 3.5rem;
+          height: 3.5rem;
+          background: #25d366;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          text-decoration: none;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transition: all 0.3s;
+          z-index: 1000;
+      }
+      .whatsapp-float:hover {
+          transform: scale(1.1);
+          background: #20ba5a;
+      }
+      .admin-hidden {
+          display: none;
+      }
+      .fade-in {
+          animation: fadeIn 0.5s ease-in;
+      }
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+  </style>
+</head>
+<body class="bg-white">
+<!-- Main Website -->
+<div id="mainSite">
+  <!-- Header -->
+  <header class="border-b">
+      <!-- Top Bar -->
+      <div class="bg-gray-50 py-2">
+          <div class="max-w-7xl mx-auto px-4 flex justify-between items-center text-sm">
+              <div class="flex items-center gap-2 text-gray-600">
+                  <span>English</span>
+                  <i class="fas fa-globe"></i>
+              </div>
+              <div class="flex items-center gap-4 flex-wrap">
+                  <a href="#" class="text-gray-600 hover:text-fedex-purple">Contact</a>
+                  <a href="#" class="text-gray-600 hover:text-fedex-purple">Find Locations</a>
+                  <a href="mailto:fedexlogistics419666@gmail.com" class="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
+                      <i class="fas fa-envelope"></i> Email Support
+                  </a>
+                  <a href="https://wa.me/14093823874" target="_blank" class="flex items-center gap-1 bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600">
+                      <i class="fab fa-whatsapp"></i> WhatsApp
+                  </a>
+                  <button onclick="showAdminPanel()" class="bg-fedex-purple text-white px-3 py-1 rounded text-xs hover:bg-purple-700">
+                      Management
+                  </button>
+              </div>
+          </div>
+      </div>
+      <!-- Main Header -->
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div class="text-3xl font-bold">
+              <span class="text-fedex-purple">Fed</span><span class="text-fedex-orange">Ex</span>
+          </div>
+          <nav class="hidden md:flex items-center gap-8">
+              <a href="#" class="text-gray-700 hover:text-fedex-purple font-medium">Track</a>
+              <a href="#" class="text-gray-700 hover:text-fedex-purple font-medium">Support</a>
+              <a href="#" class="text-gray-700 hover:text-fedex-purple font-medium">Locations</a>
+          </nav>
+          <div class="hidden md:flex items-center gap-4">
+              <div class="relative">
+                  <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                  <input type="text" placeholder="Search fedex.com" class="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+              </div>
+              <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                  <i class="fas fa-user"></i> Log In
+              </button>
+              <button class="p-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                  <i class="fas fa-shopping-cart"></i>
+              </button>
+          </div>
+      </div>
+  </header>
+  <!-- Hero Section -->
+  <section class="hero-bg text-white py-20">
+      <div class="max-w-7xl mx-auto px-4 hero-content">
+          <div class="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                  <h1 class="text-5xl font-bold mb-6">Track Your Package</h1>
+                  <p class="text-xl mb-8 text-purple-100">
+                      Get real-time updates on your packages with our advanced tracking system. Fast, reliable, and secure delivery worldwide.
+                  </p>
+                  <div class="grid grid-cols-2 gap-6">
+                      <div class="flex items-center gap-3">
+                          <i class="fas fa-clock text-3xl text-fedex-orange"></i>
+                          <div>
+                              <div class="font-semibold">Next Day</div>
+                              <div class="text-sm text-purple-200">Delivery Available</div>
+                          </div>
+                      </div>
+                      <div class="flex items-center gap-3">
+                          <i class="fas fa-map-marker-alt text-3xl text-fedex-orange"></i>
+                          <div>
+                              <div class="font-semibold">220+ Countries</div>
+                              <div class="text-sm text-purple-200">Worldwide Coverage</div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div>
+                  <div class="bg-white bg-opacity-10 backdrop-blur border border-white border-opacity-20 rounded-lg p-6 text-center">
+                      <h3 class="text-2xl font-semibold mb-4 text-white">Professional Package Tracking</h3>
+                      <p class="text-purple-100">
+                          Track multiple packages with detailed information and real-time updates. Use our comprehensive tracking system below for complete package details.
+                      </p>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </section>
+  <!-- Tracking Section -->
+  <section class="py-20 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4">
+          <div class="text-center mb-12">
+              <h2 class="text-4xl font-bold mb-4">Track Your Shipments</h2>
+              <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                  Get real-time updates on your packages with our advanced tracking system
+              </p>
+          </div>
+          <div class="grid lg:grid-cols-2 gap-12">
+              <!-- Tracking Form -->
+              <div class="bg-white rounded-lg shadow-lg p-6">
+                  <h3 class="text-xl font-semibold mb-6">Enter Tracking Information</h3>
+                  <form id="trackingForm" class="space-y-4">
+                      <div class="relative">
+                          <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                          <textarea
+                               id="trackingInput"
+                               placeholder="Enter your tracking number(s) (one per line)"
+                              class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md min-h-32 focus:outline-none focus:ring-2 focus:ring-fedex-purple resize-none"
+                          ></textarea>
+                      </div>
+                      <button type="submit" class="w-full bg-fedex-orange text-white py-3 px-6 rounded-md font-semibold hover:bg-orange-600 transition-colors">
+                          <span id="trackingButtonText">Track Packages</span>
+                          <i id="trackingSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                      </button>
+                  </form>
+                  <div class="mt-6 pt-6 border-t border-gray-200">
+                      <h4 class="font-medium mb-3">Other Tracking Options:</h4>
+                      <div class="space-y-2">
+                          <button class="w-full text-left px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                              Track by Reference
+                          </button>
+                          <button class="w-full text-left px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                              Track by Door Tag Number
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              <!-- Tracking Results -->
+              <div id="trackingResults" class="space-y-4">
+                  <!-- Results will be displayed here -->
+              </div>
+          </div>
+      </div>
+  </section>
+  <!-- Services Section -->
+  <section class="py-20">
+      <div class="max-w-7xl mx-auto px-4">
+          <div class="text-center mb-12">
+              <h2 class="text-4xl font-bold mb-4">Our Services</h2>
+              <p class="text-xl text-gray-600">
+                  Choose from our comprehensive range of shipping and logistics solutions
+              </p>
+          </div>
+          <div class="grid md:grid-cols-3 gap-8 mb-16">
+              <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
+                  <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i class="fas fa-bolt text-2xl text-fedex-purple"></i>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">FedEx Express</h3>
+                  <p class="text-gray-600 mb-4">Fast, reliable express delivery worldwide</p>
+                  <ul class="text-sm text-gray-600 space-y-1 mb-6 text-left">
+                      <li>• Next business day</li>
+                      <li>• International express</li>
+                      <li>• Time-definite delivery</li>
+                  </ul>
+                  <button class="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">Learn More</button>
+              </div>
+              <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
+                  <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i class="fas fa-truck text-2xl text-fedex-orange"></i>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">FedEx Ground</h3>
+                  <p class="text-gray-600 mb-4">Cost-effective ground shipping solutions</p>
+                  <ul class="text-sm text-gray-600 space-y-1 mb-6 text-left">
+                      <li>• 1-5 business days</li>
+                      <li>• Residential delivery</li>
+                      <li>• Commercial delivery</li>
+                  </ul>
+                  <button class="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">Learn More</button>
+              </div>
+              <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition-shadow">
+                  <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i class="fas fa-box text-2xl text-blue-600"></i>
+                  </div>
+                  <h3 class="text-xl font-semibold mb-3">FedEx Freight</h3>
+                  <p class="text-gray-600 mb-4">Less-than-truckload freight services</p>
+                  <ul class="text-sm text-gray-600 space-y-1 mb-6 text-left">
+                      <li>• LTL shipping</li>
+                      <li>• Freight management</li>
+                      <li>• Supply chain solutions</li>
+                  </ul>
+                  <button class="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">Learn More</button>
+              </div>
+          </div>
+          <!-- Why Choose Us -->
+          <div class="bg-gray-50 rounded-lg p-12 text-center">
+              <h3 class="text-2xl font-semibold mb-8">Why Choose Us</h3>
+              <div class="grid md:grid-cols-3 gap-8">
+                  <div>
+                      <i class="fas fa-shield-alt text-4xl text-fedex-purple mb-4"></i>
+                      <h4 class="text-lg font-semibold mb-2">Secure & Reliable</h4>
+                      <p class="text-gray-600">Your packages are protected with advanced security measures</p>
+                  </div>
+                  <div>
+                      <i class="fas fa-globe text-4xl text-fedex-purple mb-4"></i>
+                      <h4 class="text-lg font-semibold mb-2">Global Network</h4>
+                      <p class="text-gray-600">Reach over 220 countries and territories worldwide</p>
+                  </div>
+                  <div>
+                      <i class="fas fa-clock text-4xl text-fedex-purple mb-4"></i>
+                      <h4 class="text-lg font-semibold mb-2">Time-Definite</h4>
+                      <p class="text-gray-600">Guaranteed delivery times you can count on</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </section>
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-12">
+      <div class="max-w-7xl mx-auto px-4">
+          <div class="grid md:grid-cols-4 gap-8 mb-8">
+              <div>
+                  <div class="text-2xl font-bold mb-4">
+                      <span class="text-purple-400">Fed</span><span class="text-orange-400">Ex</span>
+                  </div>
+                  <p class="text-gray-400 mb-4">Connecting people and possibilities around the world.</p>
+                  <p class="text-gray-400 text-sm mb-4">
+                      <i class="fas fa-envelope mr-1"></i> fedexlogistics419666@gmail.com
+                  </p>
+                  <div class="flex gap-3">
+                      <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-content hover:bg-gray-600">
+                          <i class="fab fa-facebook-f text-sm"></i>
+                      </a>
+                      <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-content hover:bg-gray-600">
+                          <i class="fab fa-twitter text-sm"></i>
+                      </a>
+                      <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-content hover:bg-gray-600">
+                          <i class="fab fa-linkedin-in text-sm"></i>
+                      </a>
+                  </div>
+              </div>
+              <div>
+                  <h4 class="font-semibold mb-4">Our Company</h4>
+                  <ul class="space-y-2 text-sm text-gray-400">
+                      <li><a href="#" class="hover:text-white">About FedEx</a></li>
+                      <li><a href="#" class="hover:text-white">Investor Relations</a></li>
+                      <li><a href="#" class="hover:text-white">Careers</a></li>
+                      <li><a href="#" class="hover:text-white">FedEx Blog</a></li>
+                  </ul>
+              </div>
+              <div>
+                  <h4 class="font-semibold mb-4">Services</h4>
+                  <ul class="space-y-2 text-sm text-gray-400">
+                      <li><a href="#" class="hover:text-white">FedEx Express</a></li>
+                      <li><a href="#" class="hover:text-white">FedEx Ground</a></li>
+                      <li><a href="#" class="hover:text-white">FedEx Freight</a></li>
+                      <li><a href="#" class="hover:text-white">FedEx Office</a></li>
+                  </ul>
+              </div>
+              <div>
+                  <h4 class="font-semibold mb-4">Support</h4>
+                  <ul class="space-y-2 text-sm text-gray-400">
+                      <li><a href="#" class="hover:text-white">Customer Support</a></li>
+                      <li><a href="#" class="hover:text-white">Shipping Tools</a></li>
+                      <li><a href="#" class="hover:text-white">Developer Resources</a></li>
+                      <li><a href="#" class="hover:text-white">Service Updates</a></li>
+                  </ul>
+              </div>
+          </div>
+          <div class="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center">
+              <div class="flex flex-wrap gap-6 text-sm text-gray-400 mb-4 md:mb-0">
+                  <a href="#" class="hover:text-white">Site Map</a>
+                  <a href="#" class="hover:text-white">Terms of Use</a>
+                  <a href="#" class="hover:text-white">Privacy Policy</a>
+                  <a href="#" class="hover:text-white">Security</a>
+              </div>
+              <div class="text-sm text-gray-400">© 2025 FedEx. All rights reserved.</div>
+          </div>
+      </div>
+  </footer>
+</div>
+<!-- Admin Panel -->
+<div id="adminPanel" class="admin-hidden min-h-screen bg-gray-50">
+  <header class="bg-white border-b">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div class="flex items-center gap-4">
+              <div class="text-2xl font-bold">
+                  <span class="text-fedex-purple">Fed</span><span class="text-fedex-orange">Ex</span>
+              </div>
+              <span class="text-gray-600">Management</span>
+          </div>
+          <div class="flex gap-3">
+              <button onclick="showMainSite()" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                  Back to Site
+              </button>
+              <button onclick="logout()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                  Logout
+              </button>
+          </div>
+      </div>
+  </header>
+  <div class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow p-4">
+              <nav class="space-y-2">
+                  <button onclick="showAdminSection('packages')" id="packagesTab" class="w-full text-left px-4 py-3 bg-fedex-purple text-white rounded-md">
+                      <i class="fas fa-box mr-2"></i> Manage Packages
+                  </button>
+                  <button onclick="showAdminSection('add-package')" id="addPackageTab" class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md">
+                      <i class="fas fa-plus mr-2"></i> Add Package
+                  </button>
+              </nav>
+          </div>
+      </div>
+      <!-- Main Content -->
+      <div class="lg:col-span-3">
+          <!-- Manage Packages Section -->
+          <div id="packagesSection" class="bg-white rounded-lg shadow">
+              <div class="p-6 border-b">
+                  <h2 class="text-xl font-semibold mb-4">Manage Packages</h2>
+                  <div class="flex gap-4 mb-4">
+                      <input type="text" id="packageSearch" placeholder="Search packages..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                      <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                          <option value="">All Status</option>
+                          <option value="shipped">Shipped</option>
+                          <option value="in-transit">In Transit</option>
+                          <option value="out-for-delivery">Out for Delivery</option>
+                          <option value="delivered">Delivered</option>
+                      </select>
+                  </div>
+              </div>
+              <div class="p-6">
+                  <div class="overflow-x-auto">
+                      <table class="w-full" id="packagesTable">
+                          <thead>
+                              <tr class="border-b">
+                                  <th class="text-left p-3">Tracking Number</th>
+                                  <th class="text-left p-3">Recipient</th>
+                                  <th class="text-left p-3">Status</th>
+                                  <th class="text-left p-3">Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody id="packagesTableBody">
+                              <!-- Packages will be loaded here -->
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+          <!-- Add Package Section -->
+          <div id="addPackageSection" class="bg-white rounded-lg shadow admin-hidden">
+              <div class="p-6 border-b">
+                  <h2 class="text-xl font-semibold">Add New Package</h2>
+              </div>
+              <div class="p-6">
+                  <form id="addPackageForm" class="space-y-6">
+                      <!-- Image Upload -->
+                      <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                          <h3 class="text-lg font-medium mb-4 text-fedex-purple">Package Image</h3>
+                          <div class="space-y-4">
+                              <div>
+                                  <input type="file" id="packageImageInput" accept="image/*" class="hidden">
+                                  <button type="button" onclick="document.getElementById('packageImageInput').click()" class="px-4 py-2 bg-fedex-purple text-white rounded-md hover:bg-purple-700">
+                                      <i class="fas fa-camera mr-2"></i> Upload Package Image
+                                  </button>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                  <input type="url" id="imageUrlInput" placeholder="Or paste image URL here" class="flex-1 px-3 py-2 border border-gray-300 rounded-md">
+                                  <button type="button" onclick="loadImageFromUrl()" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                                      Load Image
+                                  </button>
+                              </div>
+                          </div>
+                          <img id="imagePreview" class="hidden mt-4 max-w-48 max-h-48 mx-auto rounded-lg shadow-md" alt="Package Preview">
+                      </div>
+                      <!-- Form Fields -->
+                      <div class="grid md:grid-cols-2 gap-4">
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Tracking Number</label>
+                              <input type="text" id="trackingNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple" placeholder="Auto-generated if empty">
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Recipient Name *</label>
+                              <input type="text" id="recipientName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Recipient Address *</label>
+                              <textarea id="recipientAddress" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple resize-none"></textarea>
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Sender Name *</label>
+                              <input type="text" id="senderName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Weight (lbs) *</label>
+                              <input type="number" id="packageWeight" step="0.1" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Service Type *</label>
+                              <select id="serviceType" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                                  <option value="">Select Service</option>
+                                  <option value="FedEx Express">FedEx Express</option>
+                                  <option value="FedEx Ground">FedEx Ground</option>
+                                  <option value="FedEx Freight">FedEx Freight</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Status *</label>
+                              <select id="packageStatus" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                                  <option value="shipped">Shipped</option>
+                                  <option value="in-transit">In Transit</option>
+                                  <option value="out-for-delivery">Out for Delivery</option>
+                                  <option value="delivered">Delivered</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label class="block text-sm font-medium mb-1">Estimated Delivery *</label>
+                              <input type="date" id="estimatedDelivery" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-fedex-purple">
+                          </div>
+                      </div>
+                      <button type="submit" class="w-full bg-fedex-purple text-white py-3 px-6 rounded-md font-semibold hover:bg-purple-700 transition-colors">
+                          Add Package
+                      </button>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+  // CORE PACKAGES DATABASE - These are hardcoded and always available
+  const CORE_PACKAGES = {
+      "1234567890": {
+          trackingNumber: "1234567890",
+          recipientName: "John Smith",
+          recipientAddress: "123 Main St, New York, NY 10001",
+          senderName: "Amazon Warehouse",
+          weight: 2.5,
+          serviceType: "FedEx Express",
+          status: "delivered",
+          estimatedDelivery: "2025-01-25",
+          packageImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop&crop=center",
+          events: [
+              {
+                  description: "Package delivered",
+                  timestamp: "2025-01-25T14:30:00",
+                  location: "New York, NY",
+                  completed: true,
+              },
+              {
+                  description: "Out for delivery",
+                  timestamp: "2025-01-25T08:00:00",
+                  location: "New York, NY",
+                  completed: true,
+              },
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-01-24T10:00:00",
+                  location: "Newark, NJ",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-01-24T10:00:00",
+          isGlobal: true
+      },
+      "9876543210": {
+          trackingNumber: "9876543210",
+          recipientName: "Sarah Johnson",
+          recipientAddress: "789 Oak Ave, Los Angeles, CA 90210",
+          senderName: "Best Buy",
+          weight: 5.2,
+          serviceType: "FedEx Ground",
+          status: "in-transit",
+          estimatedDelivery: "2025-01-26",
+          packageImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=200&h=200&fit=crop&crop=center",
+          events: [
+              {
+                  description: "In transit",
+                  timestamp: "2025-01-25T12:15:00",
+                  location: "Phoenix, AZ",
+                  completed: true,
+              },
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-01-24T09:00:00",
+                  location: "Memphis, TN",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-01-24T09:00:00",
+          isGlobal: true
+      },
+      "5555666677": {
+          trackingNumber: "5555666677",
+          recipientName: "Mike Wilson",
+          recipientAddress: "456 Pine St, Chicago, IL 60601",
+          senderName: "Apple Store",
+          weight: 1.2,
+          serviceType: "FedEx Express",
+          status: "out-for-delivery",
+          estimatedDelivery: "2025-01-27",
+          packageImage: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=200&h=200&fit=crop&crop=center",
+          events: [
+              {
+                  description: "Out for delivery",
+                  timestamp: "2025-01-27T07:30:00",
+                  location: "Chicago, IL",
+                  completed: true,
+              },
+              {
+                  description: "Arrived at facility",
+                  timestamp: "2025-01-26T22:15:00",
+                  location: "Chicago, IL",
+                  completed: true,
+              },
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-01-25T14:00:00",
+                  location: "Cupertino, CA",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-01-25T14:00:00",
+          isGlobal: true
+      },
+      "7777888899": {
+          trackingNumber: "7777888899",
+          recipientName: "Emma Davis",
+          recipientAddress: "321 Oak Dr, Miami, FL 33101",
+          senderName: "Nike Store",
+          weight: 3.1,
+          serviceType: "FedEx Ground",
+          status: "shipped",
+          estimatedDelivery: "2025-01-28",
+          packageImage: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&h=200&fit=crop&crop=center",
+          events: [
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-01-26T11:00:00",
+                  location: "Atlanta, GA",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-01-26T11:00:00",
+          isGlobal: true
+      },
+      "FDX52947400": {
+          trackingNumber: "FDX52947400",
+          recipientName: "Raine Sousa Salviano",
+          recipientAddress: "Rua Prefeito Anatalício Lopes da Silva, São José de Caiana, CEP: 58784-000, Brazil Phone: +55 83 9818-1961 - Final Destination: Pinto Martins international airport, Fortaleza",
+          senderName: "Jirateep",
+          weight: 1.5, // Default weight
+          serviceType: "FedEx Express", // Default service type
+          status: "delivered",
+          estimatedDelivery: "2025-03-31",
+          packageImage: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/IMG-20250807-WA0369.jpg-4FkhkE0LQhMeesaeHHaIDOpeg948ds.jpeg",
+          events: [
+              {
+                  description: "Package delivered",
+                  timestamp: "2025-03-31T10:00:00",
+                  location: "Pinto Martins international airport, Fortaleza",
+                  completed: true,
+              },
+              {
+                  description: "Departed origin facility",
+                  timestamp: "2025-03-30T15:00:00",
+                  location: "London, England",
+                  completed: true,
+              },
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-03-30T10:00:00",
+                  location: "London, England",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-03-30T10:00:00",
+          isGlobal: true
+      },
+      // New package information added here
+      "FedEx9061214280": {
+          trackingNumber: "FedEx9061214280",
+          recipientName: "God's Plan",
+          recipientAddress: "Rua Prefeito Anatalício Lopes da Silva, São José de Caiana, CEP: 58784-000, Brazil Phone: +234 906 121 4280 - Final Destination: Pinto Martins International Airport, Fortaleza",
+          senderName: "Jirateep", // Assuming same origin sender as previous
+          weight: 2.0, // Default weight
+          serviceType: "FedEx Express", // Default service type
+          status: "delivered",
+          estimatedDelivery: "2025-03-31",
+          packageImage: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/IMG-20250715-WA0038.jpg-S6ybeur5e1ftRsOpXwTVm9guo0RRsE.jpeg",
+          events: [
+              {
+                  description: "Package delivered",
+                  timestamp: "2025-03-31T10:00:00",
+                  location: "Pinto Martins International Airport, Fortaleza",
+                  completed: true,
+              },
+              {
+                  description: "Departed origin facility",
+                  timestamp: "2025-03-30T15:00:00",
+                  location: "London, England",
+                  completed: true,
+              },
+              {
+                  description: "Package shipped",
+                  timestamp: "2025-03-30T10:00:00",
+                  location: "London, England",
+                  completed: true,
+              },
+          ],
+          createdAt: "2025-03-30T10:00:00",
+          isGlobal: true
+      },
+  "FedEx9133449569": {
+  trackingNumber: "FedEx9133449569",
+  recipientName: "Hasballah bin Hashim",
+  recipientAddress: "No. 14 Baiti Jannati, Lorong R8 Panjang Indah, Kampung Rambutan, 06300 Kuala Nerang, Kedah, Malaysia — Airport: Alor Setar (AOR) — Phone: +60 19 425 7064",
+  senderName: "Akio Kanji",
+  weight: 2.3,
+  serviceType: "FedEx Express",
+  status: "in-transit",
+  estimatedDelivery: "2025-08-09",
+  packageImage: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/IMG-20250807-WA0427.jpg-VaNMhJxjDkQ58Z8wb54WTB4XoL2kh8.jpeg",
+  events: [
+    {
+      description: "In transit to Alor Setar",
+      timestamp: "2025-08-09T04:30:00",
+      location: "Kedah, MY",
+      completed: true
+    },
+    {
+      description: "Departed FedEx location",
+      timestamp: "2025-08-09T01:15:00",
+      location: "Kuala Lumpur International Airport (KUL), Sepang, MY",
+      completed: true
+    },
+    {
+      description: "Customs cleared",
+      timestamp: "2025-08-08T17:25:00",
+      location: "Kuala Lumpur, MY",
+      completed: true
+    },
+    {
+      description: "Customs clearance in progress",
+      timestamp: "2025-08-08T09:40:00",
+      location: "Kuala Lumpur, MY",
+      completed: true
+    },
+    {
+      description: "Arrived at destination country",
+      timestamp: "2025-08-08T03:50:00",
+      location: "Kuala Lumpur International Airport (KUL), Sepang, MY",
+      completed: true
+    },
+    {
+      description: "Departed FedEx location",
+      timestamp: "2025-08-07T22:10:00",
+      location: "Narita International Airport (NRT), Tokyo, JP",
+      completed: true
+    },
+    {
+      description: "Picked up",
+      timestamp: "2025-08-07T10:20:00",
+      location: "Tokyo, JP",
+      completed: true
+    },
+    {
+      description: "Shipment information sent to FedEx",
+      timestamp: "2025-08-07T08:15:00",
+      location: "Tokyo, JP",
+      completed: true
+    }
+  ],
+  createdAt: "2025-08-07T08:15:00",
+  isGlobal: true
+},
+  };
+  // Storage utility with multiple fallback methods
+  const Storage = {
+      save: function(key, data) {
+          const jsonData = JSON.stringify(data);
+          try {
+              localStorage.setItem(key, jsonData);
+              return true;
+          } catch (e) {
+              try {
+                  sessionStorage.setItem(key, jsonData);
+                  return true;
+              } catch (e2) {
+                  // Fallback to memory storage
+                  this.memoryStorage = this.memoryStorage || {};
+                  this.memoryStorage[key] = data;
+                  return true;
+              }
+          }
+      },
+      load: function(key, defaultValue) {
+          try {
+              const data = localStorage.getItem(key);
+              if (data) return JSON.parse(data);
+          } catch (e) {}
+          try {
+              const data = sessionStorage.getItem(key);
+              if (data) return JSON.parse(data);
+          } catch (e) {}
+          // Check memory storage
+          if (this.memoryStorage && this.memoryStorage[key]) {
+              return this.memoryStorage[key];
+          }
+          return defaultValue || [];
+      },
+      memoryStorage: {}
+  };
+  // Database manager
+  const Database = {
+      adminPackages: Storage.load('fedex_admin_packages', []),
+      get: function(trackingNumber) {
+          // Check core packages first
+          if (CORE_PACKAGES[trackingNumber]) {
+              return CORE_PACKAGES[trackingNumber];
+          }
+          // Check admin packages
+          const adminPackage = this.adminPackages.find(p => p.trackingNumber === trackingNumber);
+          return adminPackage || null;
+      },
+      getAll: function() {
+          const corePackages = Object.values(CORE_PACKAGES);
+          return [...corePackages, ...this.adminPackages];
+      },
+      add: function(packageData) {
+          this.adminPackages.push(packageData);
+          Storage.save('fedex_admin_packages', this.adminPackages);
+          return true;
+      },
+      remove: function(trackingNumber) {
+          const initialLength = this.adminPackages.length;
+          this.adminPackages = this.adminPackages.filter(p => p.trackingNumber !== trackingNumber);
+          if (this.adminPackages.length < initialLength) {
+              Storage.save('fedex_admin_packages', this.adminPackages);
+              return true;
+          }
+          return false;
+      },
+      exists: function(trackingNumber) {
+          return this.get(trackingNumber) !== null;
+      },
+      reload: function() {
+          this.adminPackages = Storage.load('fedex_admin_packages', []);
+      }
+  };
+  // Application state
+  let currentPackageImage = null;
+  let currentView = 'main';
+  // Utility functions
+  function formatDateTime(dateString) {
+      try {
+          const date = new Date(dateString);
+          return date.toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          });
+      } catch (error) {
+          return dateString || 'N/A';
+      }
+  }
+  function formatDate(dateString) {
+      try {
+          const date = new Date(dateString);
+          return date.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+          });
+      } catch (error) {
+          return dateString || 'N/A';
+      }
+  }
+  function generateTrackingNumber() {
+      return Math.random().toString().substr(2, 10);
+  }
+  function getStatusColor(status) {
+      if (!status) {
+          return 'status-unknown';
+      }
+      switch (status.toLowerCase()) {
+          case 'delivered':
+              return 'status-delivered';
+          case 'in-transit':
+              return 'status-in-transit';
+          case 'shipped':
+              return 'status-shipped';
+          case 'out-for-delivery':
+              return 'status-out-for-delivery';
+          default:
+              return 'status-unknown';
+      }
+  }
+  // Tracking functions
+  async function handleTracking(e) {
+      e.preventDefault();
+      const trackingInput = document.getElementById('trackingInput');
+      const resultsDiv = document.getElementById('trackingResults');
+      const buttonText = document.getElementById('trackingButtonText');
+      const spinner = document.getElementById('trackingSpinner');
+      if (!trackingInput || !resultsDiv || !buttonText || !spinner) {
+          console.error('Required elements not found');
+          return;
+      }
+      const inputValue = trackingInput.value.trim();
+      if (!inputValue) {
+          resultsDiv.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Please enter at least one tracking number</div>';
+          return;
+      }
+      const trackingNumbers = inputValue.split('\n').filter(num => num.trim());
+      // Show loading state
+      buttonText.textContent = 'Tracking...';
+      spinner.classList.remove('hidden');
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      let resultsHTML = '';
+      let foundCount = 0;
+      trackingNumbers.forEach(trackingNumber => {
+          const trimmedNumber = trackingNumber.trim();
+          if (trimmedNumber) {
+              const pkg = Database.get(trimmedNumber);
+              if (pkg) {
+                  resultsHTML += generateTrackingCard(pkg);
+                  foundCount++;
+              } else {
+                  resultsHTML += generateNotFoundCard(trimmedNumber);
+              }
+          }
+      });
+      resultsDiv.innerHTML = resultsHTML;
+      resultsDiv.classList.add('fade-in');
+      // Reset button state
+      buttonText.textContent = 'Track Packages';
+      spinner.classList.add('hidden');
+      console.log(`Tracking completed: ${foundCount}/${trackingNumbers.length} packages found`);
+  }
+  function generateTrackingCard(pkg) {
+      // Add safety checks for package data
+      if (!pkg) {
+          return '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: Package data not found</div>';
+      }
+      const safeStatus = pkg.status || 'unknown';
+      const safeEvents = pkg.events || [];
+      const statusClass = getStatusColor(safeStatus);
+      const eventsHTML = safeEvents.map(event => `
+          <div class="tracking-event ${event.completed ? 'completed' : ''}">
+              <div>
+                  <div class="font-medium">${event.description || 'N/A'}</div>
+                  <div class="text-sm text-gray-600">${event.timestamp ? formatDateTime(event.timestamp) : 'N/A'}</div>
+                  <div class="text-sm text-gray-600">${event.location || 'N/A'}</div>
+              </div>
+          </div>
+      `).join('');
+      const packageImageHTML = pkg.packageImage ? `
+          <div class="text-center mb-6">
+              <img src="${pkg.packageImage}" alt="Package Image" class="max-w-48 max-h-48 rounded-lg shadow-md mx-auto" onerror="this.style.display='none'" />
+          </div>
+      ` : '';
+      return `
+          <div class="space-y-4">
+              <div class="gradient-bg text-white rounded-lg p-6 text-center">
+                  <h3 class="text-xl font-semibold mb-2">Hello ${pkg.recipientName || 'Customer'}!</h3>
+                  <p class="text-purple-100">
+                      Your package was sent through FedEx and is being carefully handled throughout its journey to you.
+                      We're committed to delivering your package safely and on time.
+                  </p>
+              </div>
+              <div class="bg-white rounded-lg shadow-lg p-6">
+                  <div class="flex justify-between items-center mb-4">
+                      <span class="font-semibold">Tracking #: ${pkg.trackingNumber || 'N/A'}</span>
+                      <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${safeStatus}</span>
+                  </div>
+                  <div class="grid md:grid-cols-2 gap-4 mb-6">
+                      <div class="space-y-2 text-sm">
+                          <p><strong>Recipient:</strong> ${pkg.recipientName || 'N/A'}</p>
+                          <p><strong>Destination:</strong> ${pkg.recipientAddress || 'N/A'}</p>
+                          <p><strong>Sender:</strong> ${pkg.senderName || 'N/A'}</p>
+                      </div>
+                      <div class="space-y-2 text-sm">
+                          <p><strong>Service:</strong> ${pkg.serviceType || 'N/A'}</p>
+                          <p><strong>Weight:</strong> ${pkg.weight || 'N/A'} lbs</p>
+                          <p><strong>Estimated Delivery:</strong> ${pkg.estimatedDelivery ? formatDate(pkg.estimatedDelivery) : 'N/A'}</p>
+                      </div>
+                  </div>
+                  ${packageImageHTML}
+                  <div>
+                      <h4 class="font-semibold mb-3">Tracking History</h4>
+                      <div class="tracking-timeline">
+                          ${eventsHTML}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      `;
+  }
+  function generateNotFoundCard(trackingNumber) {
+      return `
+          <div class="bg-white rounded-lg shadow-lg p-6">
+              <div class="flex justify-between items-center mb-4">
+                  <span class="font-semibold">Tracking #: ${trackingNumber}</span>
+                  <span class="px-3 py-1 rounded-full text-sm font-medium status-error">Not Found</span>
+              </div>
+              <p class="text-gray-600 mb-4">No information found for this tracking number.</p>
+          </div>
+      `;
+  }
+  // Admin functions
+  function showAdminPanel() {
+      const password = prompt("Enter admin password:");
+      if (password === "admin123") {
+          document.getElementById('mainSite').classList.add('admin-hidden');
+          document.getElementById('adminPanel').classList.remove('admin-hidden');
+          currentView = 'admin';
+          loadPackages();
+      } else {
+          alert("Access denied");
+      }
+  }
+  function showMainSite() {
+      document.getElementById('adminPanel').classList.add('admin-hidden');
+      document.getElementById('mainSite').classList.remove('admin-hidden');
+      currentView = 'main';
+  }
+  function logout() {
+      showMainSite();
+  }
+  function showAdminSection(section) {
+      // Update tab states
+      document.getElementById('packagesTab').className = 'w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md';
+      document.getElementById('addPackageTab').className = 'w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md';
+      // Hide all sections
+      document.getElementById('packagesSection').classList.add('admin-hidden');
+      document.getElementById('addPackageSection').classList.add('admin-hidden');
+      if (section === 'packages') {
+          document.getElementById('packagesTab').className = 'w-full text-left px-4 py-3 bg-fedex-purple text-white rounded-md';
+          document.getElementById('packagesSection').classList.remove('admin-hidden');
+          loadPackages();
+      } else if (section === 'add-package') {
+          document.getElementById('addPackageTab').className = 'w-full text-left px-4 py-3 bg-fedex-purple text-white rounded-md';
+          document.getElementById('addPackageSection').classList.remove('admin-hidden');
+      }
+  }
+  function initializeAdminForm() {
+      const trackingNumberInput = document.getElementById('trackingNumber');
+      const estimatedDeliveryInput = document.getElementById('estimatedDelivery');
+      const imagePreview = document.getElementById('imagePreview');
+      const imageUrlInput = document.getElementById('imageUrlInput');
+      if (trackingNumberInput) {
+          trackingNumberInput.value = generateTrackingNumber();
+      }
+      if (estimatedDeliveryInput) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          estimatedDeliveryInput.value = tomorrow.toISOString().split('T')[0];
+      }
+      // Reset image
+      currentPackageImage = null;
+      if (imagePreview) imagePreview.classList.add('hidden');
+      if (imageUrlInput) imageUrlInput.value = '';
+  }
+  function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              currentPackageImage = e.target.result;
+              const preview = document.getElementById('imagePreview');
+              if (preview) {
+                  preview.src = currentPackageImage;
+                  preview.classList.remove('hidden');
+              }
+          };
+          reader.readAsDataURL(file);
+      }
+  }
+  function loadImageFromUrl() {
+      const imageUrlInput = document.getElementById('imageUrlInput');
+      const imagePreview = document.getElementById('imagePreview');
+      if (!imageUrlInput || !imagePreview) return;
+      const imageUrl = imageUrlInput.value.trim();
+      if (imageUrl) {
+          currentPackageImage = imageUrl;
+          imagePreview.src = imageUrl;
+          imagePreview.classList.remove('hidden');
+          imagePreview.onload = function() {
+              console.log('Image loaded successfully');
+          };
+          imagePreview.onerror = function() {
+              alert('Failed to load image. Please check the URL.');
+              imagePreview.classList.add('hidden');
+              currentPackageImage = null;
+          };
+      }
+  }
+  function handleAddPackage(e) {
+      e.preventDefault();
+      const formData = {
+          trackingNumber: document.getElementById('trackingNumber').value || generateTrackingNumber(),
+          recipientName: document.getElementById('recipientName').value,
+          recipientAddress: document.getElementById('recipientAddress').value,
+          senderName: document.getElementById('senderName').value,
+          weight: parseFloat(document.getElementById('packageWeight').value),
+          serviceType: document.getElementById('serviceType').value,
+          status: document.getElementById('packageStatus').value,
+          estimatedDelivery: document.getElementById('estimatedDelivery').value,
+          packageImage: currentPackageImage || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop&crop=center',
+          events: [
+              {
+                  description: 'Package created',
+                  timestamp: new Date().toISOString(),
+                  location: 'Origin facility',
+                  completed: true,
+              }
+          ],
+          createdAt: new Date().toISOString(),
+          isGlobal: false
+      };
+      // Check if tracking number already exists
+      if (Database.exists(formData.trackingNumber)) {
+          alert('Tracking number already exists. Please use a different number.');
+          return;
+      }
+      // Add to database
+      if (Database.add(formData)) {
+          alert('Package added successfully! It will be available for tracking immediately.');
+          // Reset form
+          document.getElementById('addPackageForm').reset();
+          initializeAdminForm();
+          // Reload packages list
+          loadPackages();
+      } else {
+          alert('Error adding package. Please try again.');
+      }
+  }
+  function loadPackages() {
+      Database.reload();
+      const packages = Database.getAll();
+      const tbody = document.getElementById('packagesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = packages.map(pkg => `
+          <tr class="border-b hover:bg-gray-50">
+              <td class="p-3">${pkg.trackingNumber || 'N/A'}</td>
+              <td class="p-3">${pkg.recipientName || 'N/A'}</td>
+              <td class="p-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(pkg.status)}">${pkg.status || 'unknown'}</span>
+              </td>
+              <td class="p-3">
+                  ${pkg.isGlobal ?
+                      '<span class="text-xs text-gray-500">Global Package</span>' :
+                      `<button onclick="deletePackage('${pkg.trackingNumber}')" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">Delete</button>`
+                  }
+              </td>
+          </tr>
+      `).join('');
+  }
+  function deletePackage(trackingNumber) {
+      if (confirm('Are you sure you want to delete this package?')) {
+          if (Database.remove(trackingNumber)) {
+              loadPackages();
+              alert('Package deleted successfully.');
+          } else {
+              alert('Cannot delete this package.');
+          }
+      }
+  }
+  function filterPackages() {
+      const searchInput = document.getElementById('packageSearch');
+      const statusSelect = document.getElementById('statusFilter');
+      if (!searchInput || !statusSelect) return;
+      const searchTerm = searchInput.value.toLowerCase();
+      const statusFilter = statusSelect.value;
+      const packages = Database.getAll();
+      const filteredPackages = packages.filter(pkg => {
+          const matchesSearch =
+              (pkg.trackingNumber && pkg.trackingNumber.toLowerCase().includes(searchTerm)) ||
+              (pkg.recipientName && pkg.recipientName.toLowerCase().includes(searchTerm)) ||
+              (pkg.recipientAddress && pkg.recipientAddress.toLowerCase().includes(searchTerm));
+          const matchesStatus = !statusFilter || pkg.status === statusFilter;
+          return matchesSearch && matchesStatus;
+      });
+      const tbody = document.getElementById('packagesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = filteredPackages.map(pkg => `
+          <tr class="border-b hover:bg-gray-50">
+              <td class="p-3">${pkg.trackingNumber || 'N/A'}</td>
+              <td class="p-3">${pkg.recipientName || 'N/A'}</td>
+              <td class="p-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(pkg.status)}">${pkg.status || 'unknown'}</span>
+              </td>
+              <td class="p-3">
+                  ${pkg.isGlobal ?
+                      '<span class="text-xs text-gray-500">Global Package</span>' :
+                      `<button onclick="deletePackage('${pkg.trackingNumber}')" class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">Delete</button>`
+                  }
+              </td>
+          </tr>
+      `).join('');
+  }
+  function trackSample(trackingNumber) {
+      const trackingInput = document.getElementById('trackingInput');
+      if (trackingInput) {
+          trackingInput.value = trackingNumber;
+          handleTracking({ preventDefault: () => {} });
+      }
+  }
+  // Make functions globally available
+  window.showAdminPanel = showAdminPanel;
+  window.showMainSite = showMainSite;
+  window.logout = logout;
+  window.showAdminSection = showAdminSection;
+  window.loadImageFromUrl = loadImageFromUrl;
+  window.deletePackage = deletePackage;
+  window.trackSample = trackSample;
+  // Initialize the application
+  function initializeApp() {
+      console.log('FedEx Tracking System Initialized');
+      // Set up event listeners
+      const trackingForm = document.getElementById('trackingForm');
+      const addPackageForm = document.getElementById('addPackageForm');
+      const packageSearch = document.getElementById('packageSearch');
+      const statusFilter = document.getElementById('statusFilter');
+      const packageImageInput = document.getElementById('packageImageInput');
+      if (trackingForm) trackingForm.addEventListener('submit', handleTracking);
+      if (addPackageForm) addPackageForm.addEventListener('submit', handleAddPackage);
+      if (packageSearch) packageSearch.addEventListener('input', filterPackages);
+      if (statusFilter) statusFilter.addEventListener('change', filterPackages);
+      if (packageImageInput) packageImageInput.addEventListener('change', handleImageUpload);
+      // Initialize admin form
+      initializeAdminForm();
+      console.log('Admin password: admin123');
+  }
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
+      initializeApp();
+  }
+})();
+</script>
+<!-- Begin of Chaport Live Chat code --> <script type="text/javascript"> (function(w,d,v3){ w.chaportConfig = { appId : '6898ab304c6e60cfe13efc0e' };  if(w.chaport)return;v3=w.chaport={};v3._q=[];v3._l={};v3.q=function(){v3._q.push(arguments)};v3.on=function(e,fn){if(!v3._l[e])v3._l[e]=[];v3._l[e].push(fn)};var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://app.chaport.com/javascripts/insert.js';var ss=d.getElementsByTagName('script')[0];ss.parentNode.insertBefore(s,ss)})(window, document); </script> <!-- End of Chaport Live Chat code -->
+</body>
+</html>
