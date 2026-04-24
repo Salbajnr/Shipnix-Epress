@@ -273,7 +273,7 @@ export default function PublicTracking() {
                   currentLocation={trackingResult.currentLocation}
                   estimatedDelivery={trackingResult.estimatedDelivery}
                   actualDelivery={trackingResult.actualDelivery}
-                  events={trackingResult.trackingEvents}
+                  events={trackingResult.trackingEvents as any}
                   showQR={true}
                 />
               </div>

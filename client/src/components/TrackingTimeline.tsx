@@ -208,7 +208,7 @@ export function TrackingTimeline({
                         {formatStatus(event.status)}
                       </h4>
                       <time className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatDate(event.timestamp || "")}
+                        {formatDate(event.timestamp ? String(event.timestamp) : "")}
                       </time>
                     </div>
                     {event.location && (

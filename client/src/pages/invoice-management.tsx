@@ -80,10 +80,11 @@ export default function InvoiceManagement() {
     return null;
   }
 
-  const { data: invoices, isLoading: invoicesLoading } = useQuery({
+  const { data: invoicesRaw, isLoading: invoicesLoading } = useQuery({
     queryKey: ["/api/invoices"],
     retry: false,
   });
+  const invoices: Invoice[] = Array.isArray(invoicesRaw) ? invoicesRaw : [];
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData: any) => {

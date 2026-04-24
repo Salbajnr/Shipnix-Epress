@@ -51,6 +51,7 @@ export interface IStorage {
   getQuoteByNumber(quoteNumber: string): Promise<Quote | undefined>;
   getAllQuotes(limit?: number): Promise<Quote[]>;
   updateQuoteStatus(id: number, status: string): Promise<Quote>;
+  updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote | undefined>;
 
   // Invoice operations
   createInvoice(invoiceData: InsertInvoice): Promise<Invoice>;
@@ -288,6 +289,15 @@ export class DatabaseStorage implements IStorage {
     return updatedQuote;
   }
 
+  async updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote | undefined> {
+    const [updatedQuote] = await db
+      .update(quotes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quotes.id, id))
+      .returning();
+    return updatedQuote;
+  }
+
   // Invoice operations
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     const invoiceNumber = this.generateInvoiceNumber();
@@ -397,13 +407,6 @@ export class DatabaseStorage implements IStorage {
       .update(chatMessages)
       .set({ isRead: true })
       .where(whereCondition);
-  }
-
-  // Generate unique tracking ID (ST-XXXXXXXX format)
-  private generateTrackingId(): string {
-    const prefix = "ST-";
-    const randomId = nanoid(8).toUpperCase();
-    return prefix + randomId;
   }
 
   // Generate unique quote number (QT-XXXXXXXX format)
