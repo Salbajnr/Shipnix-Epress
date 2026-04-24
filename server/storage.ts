@@ -6,6 +6,7 @@ import {
   invoices,
   notifications,
   chatMessages,
+  adminCredentials,
   type User,
   type UpsertUser,
   type Package,
@@ -14,18 +15,21 @@ import {
   type Invoice,
   type Notification,
   type ChatMessage,
+  type AdminCredential,
   type InsertPackage,
   type InsertTrackingEvent,
   type InsertQuote,
   type InsertInvoice,
   type InsertNotification,
   type InsertChatMessage,
+  type InsertAdminCredential,
   PACKAGE_STATUSES,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import QRCode from 'qrcode';
+import bcrypt from 'bcryptjs';
 
 // Interface for storage operations
 export interface IStorage {
@@ -70,6 +74,11 @@ export interface IStorage {
   getChatMessagesBySessionId(sessionId: string): Promise<ChatMessage[]>;
   getChatMessagesByPackageId(packageId: number): Promise<ChatMessage[]>;
   markChatMessagesAsRead(sessionId: string, senderType?: string): Promise<void>;
+
+  // Admin authentication operations
+  createAdminCredential(adminData: InsertAdminCredential): Promise<AdminCredential>;
+  authenticateAdmin(username: string, password: string): Promise<AdminCredential | null>;
+  updateAdminLastLogin(id: number): Promise<AdminCredential>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -98,16 +107,11 @@ export class DatabaseStorage implements IStorage {
   async createPackage(packageData: InsertPackage): Promise<Package> {
     // Generate unique tracking ID
     const trackingId = this.generateTrackingId();
-    
-    // Generate QR code for the tracking ID
-    const qrCodeDataUrl = await QRCode.toDataURL(trackingId, {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
+    console.log("Generated tracking ID:", trackingId);
+
+    // Generate QR code for tracking
+    const qrCodeDataUrl = await this.generateQRCode(trackingId);
+    console.log("Generated QR code for tracking ID:", trackingId);
 
     // Calculate delivery price adjustment based on time slot
     let deliveryPriceAdjustment = 0;
@@ -129,7 +133,7 @@ export class DatabaseStorage implements IStorage {
           deliveryPriceAdjustment = 0;
       }
     }
-    
+
     const [newPackage] = await db
       .insert(packages)
       .values({
@@ -231,12 +235,6 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(trackingEvents.timestamp));
   }
 
-  // Helper methods
-  private generateTrackingId(): string {
-    // Generate a tracking ID in format: ST-XXXXXXXXX (ShipTrack-9chars)
-    return `ST-${nanoid(9).toUpperCase()}`;
-  }
-
   private getStatusDescription(status: string): string {
     const descriptions = {
       [PACKAGE_STATUSES.CREATED]: "Package has been registered for shipping",
@@ -253,7 +251,7 @@ export class DatabaseStorage implements IStorage {
   // Quote operations
   async createQuote(quoteData: InsertQuote): Promise<Quote> {
     const quoteNumber = this.generateQuoteNumber();
-    
+
     const [newQuote] = await db
       .insert(quotes)
       .values({
@@ -261,7 +259,7 @@ export class DatabaseStorage implements IStorage {
         quoteNumber,
       })
       .returning();
-    
+
     return newQuote;
   }
 
@@ -285,7 +283,26 @@ export class DatabaseStorage implements IStorage {
       .set({ status, updatedAt: new Date() })
       .where(eq(quotes.id, id))
       .returning();
-    
+
+    return updatedQuote;
+  }
+
+  async updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote> {
+    const [updatedQuote] = await db
+      .update(quotes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quotes.id, id))
+      .returning();
+
+    return updatedQuote;
+  }
+
+  async updateQuote(id: number, updates: Partial<InsertQuote>): Promise<Quote | undefined> {
+    const [updatedQuote] = await db
+      .update(quotes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(quotes.id, id))
+      .returning();
     return updatedQuote;
   }
 
@@ -301,7 +318,7 @@ export class DatabaseStorage implements IStorage {
   // Invoice operations
   async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
     const invoiceNumber = this.generateInvoiceNumber();
-    
+
     const [newInvoice] = await db
       .insert(invoices)
       .values({
@@ -309,7 +326,7 @@ export class DatabaseStorage implements IStorage {
         invoiceNumber,
       })
       .returning();
-    
+
     return newInvoice;
   }
 
@@ -337,7 +354,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(invoices.id, id))
       .returning();
-    
+
     return updatedInvoice;
   }
 
@@ -347,7 +364,7 @@ export class DatabaseStorage implements IStorage {
       .insert(notifications)
       .values(notificationData)
       .returning();
-    
+
     return newNotification;
   }
 
@@ -369,7 +386,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(notifications.id, id))
       .returning();
-    
+
     return updatedNotification;
   }
 
@@ -419,6 +436,107 @@ export class DatabaseStorage implements IStorage {
   private generateInvoiceNumber(): string {
     const timestamp = Date.now().toString().slice(-8);
     return `INV-${timestamp}`;
+  }
+
+  // Helper to generate QR code with the correct tracking URL
+  private async generateQRCode(trackingId: string): Promise<string> {
+    try {
+      const QRCode = require('qrcode');
+      // Use the public tracking URL that doesn't require authentication
+      const trackingUrl = `${process.env.REPL_DOMAIN || 'https://your-domain.com'}/public-tracking?track=${trackingId}`;
+
+      // Generate QR code as data URL
+      const qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      console.log('QR code generated for URL:', trackingUrl);
+      return qrCodeDataUrl;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      return '';
+    }
+  }
+
+  // Admin authentication operations
+  async createAdminCredential(adminData: InsertAdminCredential): Promise<AdminCredential> {
+    // Hash the password before storing
+    const passwordHash = await bcrypt.hash(adminData.passwordHash, 10);
+    
+    const [admin] = await db
+      .insert(adminCredentials)
+      .values({
+        ...adminData,
+        passwordHash,
+      })
+      .returning();
+    
+    return admin;
+  }
+
+  async authenticateAdmin(username: string, password: string): Promise<AdminCredential | null> {
+    const [admin] = await db
+      .select()
+      .from(adminCredentials)
+      .where(and(
+        eq(adminCredentials.username, username),
+        eq(adminCredentials.isActive, true)
+      ));
+
+    if (!admin) {
+      return null;
+    }
+
+    const isValidPassword = await bcrypt.compare(password, admin.passwordHash);
+    if (!isValidPassword) {
+      return null;
+    }
+
+    // Update last login
+    await this.updateAdminLastLogin(admin.id);
+    
+    return admin;
+  }
+
+  async updateAdminLastLogin(id: number): Promise<AdminCredential> {
+    const [updatedAdmin] = await db
+      .update(adminCredentials)
+      .set({ lastLogin: new Date() })
+      .where(eq(adminCredentials.id, id))
+      .returning();
+    
+    return updatedAdmin;
+  }
+
+  // Initialize default admin credentials
+  async initializeDefaultAdmin(): Promise<void> {
+    try {
+      const existingAdmin = await db
+        .select()
+        .from(adminCredentials)
+        .where(eq(adminCredentials.username, "admin"))
+        .limit(1);
+
+      if (existingAdmin.length === 0) {
+        await this.createAdminCredential({
+          username: "admin",
+          passwordHash: "admin123", // This will be hashed by createAdminCredential
+          role: "super_admin",
+          isActive: true,
+        });
+        console.log("✅ Default admin credentials created:");
+        console.log("   Username: admin");
+        console.log("   Password: admin123");
+        console.log("   Role: super_admin");
+      }
+    } catch (error) {
+      console.error("Error initializing default admin:", error);
+    }
   }
 }
 

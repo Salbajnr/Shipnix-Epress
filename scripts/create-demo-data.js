@@ -1,4 +1,5 @@
-// Create demo tracking data via API calls
+// Demo data is now created through the admin interface using real API endpoints
+// Use the admin dashboard to create test packages with real tracking IDs
 const demoPackages = [
   {
     trackingId: "ST-DEMO12345",
@@ -62,12 +63,5 @@ const demoPackages = [
   }
 ];
 
-async function createDemoData() {
-  console.log("Demo data objects created. These will be inserted through the admin interface instead.");
-  console.log("Sample tracking IDs that will be available:");
-  demoPackages.forEach(pkg => {
-    console.log(`- ${pkg.trackingId} (${pkg.currentStatus})`);
-  });
-}
-
-createDemoData();
+console.log("Use the admin dashboard at /admin to create real packages with tracking IDs");
+console.log("All package data is stored in PostgreSQL database with real API endpoints"););
